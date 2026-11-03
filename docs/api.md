@@ -27,7 +27,7 @@
 | メソッド | パス | 認証 | 成功 | 用途 | 主な入力 |
 | --- | --- | --- | --- | --- | --- |
 | POST | `/balloons` | 必要 | 201 | 風船を飛ばす | 自分の曲ID、ぼかした出発地点、地名 |
-| GET | `/balloons/me` | 必要 | 200 | 飛行中の自分の風船と回数を返す | なし |
+| GET | `/me/balloons` | 必要 | 200 | 飛行中の自分の風船と回数を返す | なし |
 | POST | `/balloons/:id/plays` | 必要 | 200 | 5秒再生されたら回数を加算する（1人1回） | 風船ID |
 | POST | `/balloons/:id/collect` | 必要 | 200 | 回収する（1日1回） | 風船ID |
 | POST | `/balloons/:id/pop` | 必要 | 200 | 割る（自分の世界からのみ消す） | 風船ID |
@@ -49,7 +49,7 @@
 | 認証が必要なAPI | 401 | トークンがない、または無効 |
 | `POST /tracks` | 422 | mp3ではない、または20MBを超えている |
 | `POST /balloons` | 403 | 他の人の曲を飛ばそうとした |
-| `POST /balloons` | 409 | 飛行中の風船がある。アプリは `/balloons/me` を読み直す |
+| `POST /balloons` | 409 | 飛行中の風船がある。アプリは `/me/balloons` を読み直す |
 | `POST /balloons` | 422 | 出発地点が対象範囲の外にある |
 | `POST /balloons/:id/plays` | 200 | 再送や終了済みの風船でも成功とし、回数は増やさない |
 | `POST /balloons/:id/collect` | 200 | 回収済みの本人が再送した |

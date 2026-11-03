@@ -252,7 +252,7 @@
       "y": 1364,
       "label": "409 Conflict",
       "variant": "return",
-      "note": "再送の場合に備え、GET /balloons/me で状態を読み直す"
+      "note": "再送の場合に備え、GET /me/balloons で状態を読み直す"
     }
   ],
   "activations": [
