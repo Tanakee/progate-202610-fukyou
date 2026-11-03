@@ -50,145 +50,161 @@
   "segments": [
     {
       "from": 158,
-      "to": 558,
+      "to": 638,
       "label": "再生の開始"
     },
     {
-      "from": 580,
-      "to": 860,
+      "from": 660,
+      "to": 940,
       "label": "5秒で1回"
     },
     {
-      "from": 882,
-      "to": 1128,
+      "from": 962,
+      "to": 1208,
       "label": "30秒ごとの切り替え判定"
     }
   ],
   "messages": [
     {
       "id": "m1",
-      "from": "app",
-      "to": "api",
-      "y": 194,
-      "label": "GET /tracks",
-      "variant": "default",
-      "note": "起動時に取得して端末にキャッシュする。認証は不要"
-    },
-    {
-      "id": "m2",
-      "from": "api",
-      "to": "app",
-      "y": 268,
-      "label": "曲一覧とmp3のURL",
-      "variant": "return"
-    },
-    {
-      "id": "m3",
       "from": "user",
       "to": "app",
-      "y": 308,
+      "y": 194,
       "label": "流す設定をON",
       "variant": "emphasis",
       "note": "初期値はOFF。ONの間は起動直後からバックグラウンドでも流れる"
     },
     {
-      "id": "m4",
+      "id": "m2",
       "from": "ws",
       "to": "app",
-      "y": 382,
+      "y": 268,
       "label": "balloons.snapshot",
       "variant": "emphasis",
       "note": "アプリは現在地と比べて一番近い風船を判定する。自分の風船と割った風船は除く"
     },
     {
-      "id": "m5",
+      "id": "m3",
       "from": "app",
-      "to": "storage",
-      "y": 456,
-      "label": "曲IDのURLからmp3を取得",
+      "to": "api",
+      "y": 342,
+      "label": "GET /tracks/:id",
+      "variant": "default",
+      "note": "初めて見る曲IDだけ読み、端末にキャッシュする。認証は不要"
+    },
+    {
+      "id": "m4",
+      "from": "api",
+      "to": "db",
+      "y": 416,
+      "label": "曲を取得",
       "variant": "default"
     },
     {
+      "id": "m5",
+      "from": "db",
+      "to": "api",
+      "y": 456,
+      "label": "track",
+      "variant": "return"
+    },
+    {
       "id": "m6",
-      "from": "storage",
+      "from": "api",
       "to": "app",
       "y": 496,
-      "label": "mp3",
+      "label": "曲名とmp3のURL",
       "variant": "return"
     },
     {
       "id": "m7",
       "from": "app",
-      "to": "user",
+      "to": "storage",
       "y": 536,
-      "label": "再生",
+      "label": "mp3を取得",
+      "variant": "default"
+    },
+    {
+      "id": "m8",
+      "from": "storage",
+      "to": "app",
+      "y": 576,
+      "label": "mp3",
       "variant": "return"
     },
     {
       "id": "m9",
       "from": "app",
-      "to": "api",
+      "to": "user",
       "y": 616,
+      "label": "再生",
+      "variant": "return"
+    },
+    {
+      "id": "m11",
+      "from": "app",
+      "to": "api",
+      "y": 696,
       "label": "POST /balloons/:id/plays",
       "variant": "emphasis",
       "note": "実際に5秒再生されたら送る。失敗したら再送する"
     },
     {
-      "id": "m10",
+      "id": "m12",
       "from": "api",
       "to": "db",
-      "y": 690,
+      "y": 770,
       "label": "同じ人の記録を確認して加算",
       "variant": "security",
       "note": "同じ人は同じ風船で1回まで"
     },
     {
-      "id": "m11",
+      "id": "m13",
       "from": "db",
       "to": "api",
-      "y": 764,
+      "y": 844,
       "label": "回数",
       "variant": "return"
     },
     {
-      "id": "m12",
+      "id": "m14",
       "from": "api",
       "to": "app",
-      "y": 804,
+      "y": 884,
       "label": "200",
       "variant": "return",
       "note": "再送や終了済みの風船でも200を返し、回数は増やさない"
     },
     {
-      "id": "m14",
+      "id": "m16",
       "from": "ws",
       "to": "app",
-      "y": 918,
+      "y": 998,
       "label": "balloons.snapshot",
       "variant": "emphasis",
       "note": "最新の位置で30秒に1回、一番近い風船を判定し直す"
     },
     {
-      "id": "m15",
+      "id": "m17",
       "from": "app",
       "to": "storage",
-      "y": 992,
+      "y": 1072,
       "label": "次の曲を取得",
       "variant": "default"
     },
     {
-      "id": "m16",
+      "id": "m18",
       "from": "storage",
       "to": "app",
-      "y": 1032,
+      "y": 1112,
       "label": "mp3",
       "variant": "return"
     },
     {
-      "id": "m17",
+      "id": "m19",
       "from": "app",
       "to": "user",
-      "y": 1072,
+      "y": 1152,
       "label": "フェードで曲を切り替え",
       "variant": "return",
       "note": "今の風船より1割以上近いときだけ切り替える"
@@ -198,61 +214,67 @@
     {
       "participant": "app",
       "from": 189,
-      "to": 542,
+      "to": 622,
       "type": "frontend"
-    },
-    {
-      "participant": "api",
-      "from": 189,
-      "to": 274,
-      "type": "backend"
     },
     {
       "participant": "ws",
-      "from": 377,
-      "to": 388,
+      "from": 263,
+      "to": 274,
       "type": "messagebus"
     },
     {
-      "participant": "storage",
-      "from": 451,
-      "to": 502,
-      "type": "cloud"
-    },
-    {
-      "participant": "app",
-      "from": 611,
-      "to": 810,
-      "type": "frontend"
-    },
-    {
       "participant": "api",
-      "from": 611,
-      "to": 810,
+      "from": 337,
+      "to": 502,
       "type": "backend"
     },
     {
       "participant": "db",
-      "from": 685,
-      "to": 770,
+      "from": 411,
+      "to": 462,
+      "type": "database"
+    },
+    {
+      "participant": "storage",
+      "from": 531,
+      "to": 582,
+      "type": "cloud"
+    },
+    {
+      "participant": "app",
+      "from": 691,
+      "to": 890,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 691,
+      "to": 890,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 765,
+      "to": 850,
       "type": "database"
     },
     {
       "participant": "ws",
-      "from": 913,
-      "to": 924,
+      "from": 993,
+      "to": 1004,
       "type": "messagebus"
     },
     {
       "participant": "app",
-      "from": 913,
-      "to": 1078,
+      "from": 993,
+      "to": 1158,
       "type": "frontend"
     },
     {
       "participant": "storage",
-      "from": 987,
-      "to": 1038,
+      "from": 1067,
+      "to": 1118,
       "type": "cloud"
     }
   ],

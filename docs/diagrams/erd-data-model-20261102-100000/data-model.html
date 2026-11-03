@@ -5305,7 +5305,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <text data-domain-label="" x="35" y="845.6" class="t-muted er-band-label" font-size="9" font-weight="700">認証</text>
         </g>
         <g data-domain-band="曲" class="er-hue-backend">
-          <rect x="20" y="382" width="264" height="142" rx="12" class="c-lane er-band" stroke-width="1"/>
+          <rect x="20" y="382" width="264" height="162" rx="12" class="c-lane er-band" stroke-width="1"/>
           <rect x="28" y="375" width="27" height="15" rx="7.5" class="c-mask"/>
           <rect x="28" y="375" width="27" height="15" rx="7.5" class="er-band-pill"/>
           <text data-domain-label="" x="35" y="385.6" class="t-muted er-band-label" font-size="9" font-weight="700">曲</text>
@@ -5339,16 +5339,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
              to the shared side, so a cardinality glyph that reaches further out
              has to stay readable over it, and the ring's mask has to be able to
              punch through) -->
-        <path data-er-trunk="" data-composition-points="356,98;356,458" d="M 356 98 L 356 458" class="a-default" stroke-width="1.5"/>
+        <path data-er-trunk="" data-composition-points="356,98;356,468" d="M 356 98 L 356 468" class="a-default" stroke-width="1.5"/>
         <path data-er-trunk="" data-composition-points="638,88;638,718" d="M 638 88 L 638 718" class="a-default" stroke-width="1.5"/>
 
         <!-- Relationship paths (before entities for correct z-order) -->
         <path data-edge-from="balloons" data-edge-to="users" data-edge-label="飛ばす" data-edge-key="0" data-edge-id="balloon-owner" data-er-ends="many one optional" data-composition-points="372,186;356,186;356,98;272,98" d="M 372 186 L 356 186 M 356 98 L 272 98" class="a-default" data-animate="edge" style="--step:0" stroke-width="1.5" marker-start="url(#er-many-optional-start)" marker-end="url(#er-one-end)"/>
-        <path data-edge-from="balloons" data-edge-to="tracks" data-edge-key="1" data-edge-id="balloon-track" data-er-ends="many one optional" data-composition-points="372,210;356,210;356,458;272,458" d="M 372 210 L 356 210 M 356 458 L 272 458" class="a-default" data-animate="edge" style="--step:1" stroke-width="1.5" marker-start="url(#er-many-optional-start)" marker-end="url(#er-one-end)"/>
-        <path data-edge-from="plays" data-edge-to="balloons" data-edge-key="2" data-edge-id="play-balloon" data-er-ends="many one optional" data-composition-points="694,88;638,88;638,174;622,174" d="M 694 88 L 638 88 M 638 174 L 622 174" class="a-default" data-animate="edge" style="--step:2" stroke-width="1.5" marker-start="url(#er-many-optional-start)" marker-end="url(#er-one-end)"/>
-        <path data-edge-from="pops" data-edge-to="balloons" data-edge-key="3" data-edge-id="pop-balloon" data-er-ends="many one optional" data-composition-points="694,448;638,448;638,198;622,198" d="M 694 448 L 638 448 M 638 198 L 622 198" class="a-default" data-animate="edge" style="--step:3" stroke-width="1.5" marker-start="url(#er-many-optional-start)" marker-end="url(#er-one-end)"/>
-        <path data-edge-from="favorites" data-edge-to="balloons" data-edge-key="4" data-edge-id="favorite-balloon" data-er-ends="one optional" data-composition-points="694,718;638,718;638,222;622,222" d="M 694 718 L 638 718 M 638 222 L 622 222" class="a-default" data-animate="edge" style="--step:4" stroke-width="1.5" marker-start="url(#er-one-optional-start)" marker-end="url(#er-one-end)"/>
-        <path data-edge-from="journeys" data-edge-to="balloons" data-edge-key="5" data-edge-id="journey-balloon" data-er-ends="one optional" data-composition-points="497,400;497,356" d="M 497 400 L 497 356" class="a-default" data-animate="edge" style="--step:5" stroke-width="1.5" marker-start="url(#er-one-optional-start)" marker-end="url(#er-one-end)"/>
+        <path data-edge-from="tracks" data-edge-to="users" data-edge-label="アップロード" data-edge-key="1" data-edge-id="track-user" data-er-ends="many one optional" data-composition-points="152,400;152,156" d="M 152 400 L 152 156" class="a-default" data-animate="edge" style="--step:1" stroke-width="1.5" marker-start="url(#er-many-optional-start)" marker-end="url(#er-one-end)"/>
+        <path data-edge-from="balloons" data-edge-to="tracks" data-edge-key="2" data-edge-id="balloon-track" data-er-ends="many one optional" data-composition-points="372,210;356,210;356,468;272,468" d="M 372 210 L 356 210 M 356 468 L 272 468" class="a-default" data-animate="edge" style="--step:2" stroke-width="1.5" marker-start="url(#er-many-optional-start)" marker-end="url(#er-one-end)"/>
+        <path data-edge-from="plays" data-edge-to="balloons" data-edge-key="3" data-edge-id="play-balloon" data-er-ends="many one optional" data-composition-points="694,88;638,88;638,174;622,174" d="M 694 88 L 638 88 M 638 174 L 622 174" class="a-default" data-animate="edge" style="--step:3" stroke-width="1.5" marker-start="url(#er-many-optional-start)" marker-end="url(#er-one-end)"/>
+        <path data-edge-from="pops" data-edge-to="balloons" data-edge-key="4" data-edge-id="pop-balloon" data-er-ends="many one optional" data-composition-points="694,448;638,448;638,198;622,198" d="M 694 448 L 638 448 M 638 198 L 622 198" class="a-default" data-animate="edge" style="--step:4" stroke-width="1.5" marker-start="url(#er-many-optional-start)" marker-end="url(#er-one-end)"/>
+        <path data-edge-from="favorites" data-edge-to="balloons" data-edge-key="5" data-edge-id="favorite-balloon" data-er-ends="one optional" data-composition-points="694,718;638,718;638,222;622,222" d="M 694 718 L 638 718 M 638 222 L 622 222" class="a-default" data-animate="edge" style="--step:5" stroke-width="1.5" marker-start="url(#er-one-optional-start)" marker-end="url(#er-one-end)"/>
+        <path data-edge-from="journeys" data-edge-to="balloons" data-edge-key="6" data-edge-id="journey-balloon" data-er-ends="one optional" data-composition-points="497,400;497,356" d="M 497 400 L 497 356" class="a-default" data-animate="edge" style="--step:6" stroke-width="1.5" marker-start="url(#er-one-optional-start)" marker-end="url(#er-one-end)"/>
 
         <!-- Entities -->
         <g id="node-users" data-node-id="users" data-node-label="users" tabindex="0" role="button" aria-label="Focus users, Entity" aria-pressed="false" data-node-kind="database" data-node-tag="利用者" data-node-context="Entity" class="er-hue-database">
@@ -5437,8 +5438,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <g id="node-tracks" data-node-id="tracks" data-node-label="tracks" tabindex="0" role="button" aria-label="Focus tracks, Entity" aria-pressed="false" data-node-kind="database" data-node-tag="曲" data-node-context="Entity" class="er-hue-backend">
           <title>tracks · Entity · 曲</title>
-          <rect x="32" y="400" width="240" height="116" rx="8" class="c-mask"/>
-          <rect x="32" y="400" width="240" height="116" rx="8" class="c-database er-table" data-animate="node" style="--step:2" stroke-width="1.2"/>
+          <rect x="32" y="400" width="240" height="136" rx="8" class="c-mask"/>
+          <rect x="32" y="400" width="240" height="136" rx="8" class="c-database er-table" data-animate="node" style="--step:1" stroke-width="1.2"/>
           <path class="er-table-header" d="M 40 400 H 264 A 8 8 0 0 1 272 408 V 430 H 32 V 408 A 8 8 0 0 1 40 400 Z"/>
           <path class="er-table-cap" d="M 44 401.4 H 260" stroke-width="2.6" stroke-linecap="round" fill="none"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(40 407) scale(0.875)">
@@ -5457,23 +5458,30 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <g data-detail="context" data-er-row="1">
             <line x1="32" y1="450" x2="272" y2="450" class="c-grid er-row-rule" stroke-width="0.5"/>
             <rect x="36" y="451" width="232" height="18" rx="4" class="er-zebra"/>
-
-            <text data-detail="context" x="74" y="465" class="t-primary" font-size="11">title</text>
-            <text data-detail="context" x="260" y="465" class="er-type" font-size="10.5" text-anchor="end">text</text>
+            <rect x="42" y="455" width="22" height="13" rx="3" class="er-key-badge" data-er-badge="fk"/><text data-detail="context" x="53" y="465" class="t-messagebus" font-size="9" font-weight="600">FK</text>
+            <text data-detail="context" x="74" y="465" class="t-primary" font-size="11">user_id</text>
+            <text data-detail="context" x="260" y="465" class="er-type" font-size="10.5" text-anchor="end">uuid</text>
           </g>
           <g data-detail="context" data-er-row="2">
             <line x1="32" y1="470" x2="272" y2="470" class="c-grid er-row-rule" stroke-width="0.5"/>
 
 
-            <text data-detail="context" x="74" y="485" class="t-primary" font-size="11">artist</text>
+            <text data-detail="context" x="74" y="485" class="t-primary" font-size="11">title</text>
             <text data-detail="context" x="260" y="485" class="er-type" font-size="10.5" text-anchor="end">text</text>
           </g>
           <g data-detail="context" data-er-row="3">
             <line x1="32" y1="490" x2="272" y2="490" class="c-grid er-row-rule" stroke-width="0.5"/>
             <rect x="36" y="491" width="232" height="18" rx="4" class="er-zebra"/>
 
-            <text data-detail="context" x="74" y="505" class="t-primary" font-size="11">mp3_url</text>
+            <text data-detail="context" x="74" y="505" class="t-primary" font-size="11">artist</text>
             <text data-detail="context" x="260" y="505" class="er-type" font-size="10.5" text-anchor="end">text</text>
+          </g>
+          <g data-detail="context" data-er-row="4">
+            <line x1="32" y1="510" x2="272" y2="510" class="c-grid er-row-rule" stroke-width="0.5"/>
+
+
+            <text data-detail="context" x="74" y="525" class="t-primary" font-size="11">mp3_url</text>
+            <text data-detail="context" x="260" y="525" class="er-type" font-size="10.5" text-anchor="end">text</text>
           </g>
         </g>
 
@@ -5592,7 +5600,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-plays" data-node-id="plays" data-node-label="plays" tabindex="0" role="button" aria-label="Focus plays, Entity" aria-pressed="false" data-node-kind="database" data-node-tag="操作" data-node-context="Entity" class="er-hue-messagebus">
           <title>plays · Entity · 操作</title>
           <rect x="694" y="40" width="240" height="96" rx="8" class="c-mask"/>
-          <rect x="694" y="40" width="240" height="96" rx="8" class="c-database er-table" data-animate="node" style="--step:2" stroke-width="1.2"/>
+          <rect x="694" y="40" width="240" height="96" rx="8" class="c-database er-table" data-animate="node" style="--step:3" stroke-width="1.2"/>
           <path class="er-table-header" d="M 702 40 H 926 A 8 8 0 0 1 934 48 V 70 H 694 V 48 A 8 8 0 0 1 702 40 Z"/>
           <path class="er-table-cap" d="M 706 41.4 H 922" stroke-width="2.6" stroke-linecap="round" fill="none"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(702 47) scale(0.875)">
@@ -5627,7 +5635,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-pops" data-node-id="pops" data-node-label="pops" tabindex="0" role="button" aria-label="Focus pops, Entity" aria-pressed="false" data-node-kind="database" data-node-tag="操作" data-node-context="Entity" class="er-hue-messagebus">
           <title>pops · Entity · 操作</title>
           <rect x="694" y="400" width="240" height="96" rx="8" class="c-mask"/>
-          <rect x="694" y="400" width="240" height="96" rx="8" class="c-database er-table" data-animate="node" style="--step:3" stroke-width="1.2"/>
+          <rect x="694" y="400" width="240" height="96" rx="8" class="c-database er-table" data-animate="node" style="--step:4" stroke-width="1.2"/>
           <path class="er-table-header" d="M 702 400 H 926 A 8 8 0 0 1 934 408 V 430 H 694 V 408 A 8 8 0 0 1 702 400 Z"/>
           <path class="er-table-cap" d="M 706 401.4 H 922" stroke-width="2.6" stroke-linecap="round" fill="none"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(702 407) scale(0.875)">
@@ -5662,7 +5670,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-favorites" data-node-id="favorites" data-node-label="favorites" tabindex="0" role="button" aria-label="Focus favorites, Entity" aria-pressed="false" data-node-kind="database" data-node-tag="操作" data-node-context="Entity" class="er-hue-messagebus">
           <title>favorites · Entity · 操作</title>
           <rect x="694" y="660" width="240" height="116" rx="8" class="c-mask"/>
-          <rect x="694" y="660" width="240" height="116" rx="8" class="c-database er-table" data-animate="node" style="--step:4" stroke-width="1.2"/>
+          <rect x="694" y="660" width="240" height="116" rx="8" class="c-database er-table" data-animate="node" style="--step:5" stroke-width="1.2"/>
           <path class="er-table-header" d="M 702 660 H 926 A 8 8 0 0 1 934 668 V 690 H 694 V 668 A 8 8 0 0 1 702 660 Z"/>
           <path class="er-table-cap" d="M 706 661.4 H 922" stroke-width="2.6" stroke-linecap="round" fill="none"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(702 667) scale(0.875)">
@@ -5704,7 +5712,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-journeys" data-node-id="journeys" data-node-label="journeys" tabindex="0" role="button" aria-label="Focus journeys, Entity" aria-pressed="false" data-node-kind="database" data-node-tag="記録" data-node-context="Entity" class="er-hue-security">
           <title>journeys · Entity · 記録</title>
           <rect x="372" y="400" width="250" height="216" rx="8" class="c-mask"/>
-          <rect x="372" y="400" width="250" height="216" rx="8" class="c-database er-table" data-animate="node" style="--step:5" stroke-width="1.2"/>
+          <rect x="372" y="400" width="250" height="216" rx="8" class="c-database er-table" data-animate="node" style="--step:6" stroke-width="1.2"/>
           <path class="er-table-header" d="M 380 400 H 614 A 8 8 0 0 1 622 408 V 430 H 372 V 408 A 8 8 0 0 1 380 400 Z"/>
           <path class="er-table-cap" d="M 384 401.4 H 610" stroke-width="2.6" stroke-linecap="round" fill="none"/>
           <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(380 407) scale(0.875)">
@@ -5838,6 +5846,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g data-detail="context" data-edge-from="balloons" data-edge-to="users" data-edge-label="飛ばす" data-edge-key="0" data-edge-id="balloon-owner" data-er-ends="many one optional">
           <rect x="292.26" y="70" width="43.48" height="14" rx="3" class="c-mask"/>
           <text x="314" y="80" class="t-muted" font-size="9" text-anchor="middle">飛ばす</text>
+        </g>
+        <g data-detail="context" data-edge-from="tracks" data-edge-to="users" data-edge-label="アップロード" data-edge-key="1" data-edge-id="track-user" data-er-ends="many one optional">
+          <rect x="69.04000000000002" y="271" width="76.96" height="14" rx="3" class="c-mask"/>
+          <text x="107.52000000000001" y="281" class="t-muted" font-size="9" text-anchor="middle">アップロード</text>
         </g>
 
         <!-- Legend -->

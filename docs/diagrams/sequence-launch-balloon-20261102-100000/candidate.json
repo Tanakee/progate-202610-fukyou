@@ -33,22 +33,33 @@
       "type": "database",
       "label": "データベース",
       "sublabel": "PostgreSQL"
+    },
+    {
+      "id": "storage",
+      "type": "cloud",
+      "label": "ストレージ",
+      "sublabel": "mp3ファイル"
     }
   ],
   "segments": [
     {
       "from": 158,
-      "to": 330,
+      "to": 416,
       "label": "曲を選ぶ"
     },
     {
-      "from": 352,
-      "to": 672,
+      "from": 438,
+      "to": 844,
+      "label": "曲のアップロード"
+    },
+    {
+      "from": 866,
+      "to": 1186,
       "label": "登録"
     },
     {
-      "from": 694,
-      "to": 906,
+      "from": 1208,
+      "to": 1420,
       "label": "すでに飛行中の場合"
     }
   ],
@@ -64,92 +75,181 @@
     {
       "id": "m2",
       "from": "app",
-      "to": "user",
+      "to": "api",
       "y": 234,
-      "label": "曲リストを表示",
-      "variant": "return",
-      "note": "起動時に取得した /tracks のキャッシュを使う"
-    },
-    {
-      "id": "m3",
-      "from": "user",
-      "to": "app",
-      "y": 308,
-      "label": "曲を選ぶ",
+      "label": "GET /me/tracks",
       "variant": "default"
     },
     {
-      "id": "m5",
-      "from": "app",
+      "id": "m3",
+      "from": "api",
+      "to": "db",
+      "y": 274,
+      "label": "自分の曲を取得",
+      "variant": "default"
+    },
+    {
+      "id": "m4",
+      "from": "db",
       "to": "api",
-      "y": 388,
-      "label": "POST /balloons",
-      "variant": "emphasis",
-      "note": "曲ID、ぼかした出発地点、地名を送る。生の現在地は送らない"
+      "y": 314,
+      "label": "tracks",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "api",
+      "to": "app",
+      "y": 354,
+      "label": "自分の曲一覧",
+      "variant": "return"
     },
     {
       "id": "m6",
-      "from": "api",
-      "to": "db",
-      "y": 462,
-      "label": "飛行中でなければ風船を作成",
-      "variant": "security",
-      "note": "部分一意制約で1人1個を守る"
-    },
-    {
-      "id": "m7",
-      "from": "db",
-      "to": "api",
-      "y": 536,
-      "label": "balloon",
+      "from": "app",
+      "to": "user",
+      "y": 394,
+      "label": "曲リストを表示",
       "variant": "return"
     },
     {
       "id": "m8",
-      "from": "api",
+      "from": "user",
       "to": "app",
-      "y": 576,
-      "label": "201 balloon",
-      "variant": "return"
+      "y": 474,
+      "label": "mp3を選ぶ",
+      "variant": "emphasis",
+      "note": "新しい曲を飛ばすときだけ"
     },
     {
       "id": "m9",
       "from": "app",
-      "to": "user",
-      "y": 616,
-      "label": "ボタンが「🎈0回」に変わる",
-      "variant": "return",
-      "note": "他の端末には次の snapshot で届く"
+      "to": "api",
+      "y": 548,
+      "label": "POST /tracks",
+      "variant": "emphasis",
+      "note": "mp3、曲名、アーティスト名を送る"
+    },
+    {
+      "id": "m10",
+      "from": "api",
+      "to": "storage",
+      "y": 622,
+      "label": "mp3を保存",
+      "variant": "default"
     },
     {
       "id": "m11",
-      "from": "app",
+      "from": "storage",
       "to": "api",
-      "y": 730,
-      "label": "POST /balloons",
-      "variant": "default"
+      "y": 662,
+      "label": "mp3のURL",
+      "variant": "return"
     },
     {
       "id": "m12",
       "from": "api",
       "to": "db",
-      "y": 770,
-      "label": "風船を作成",
+      "y": 702,
+      "label": "user_id付きで tracks に保存",
       "variant": "default"
     },
     {
       "id": "m13",
       "from": "db",
       "to": "api",
-      "y": 810,
-      "label": "一意制約違反",
+      "y": 742,
+      "label": "track",
       "variant": "return"
     },
     {
       "id": "m14",
       "from": "api",
       "to": "app",
-      "y": 850,
+      "y": 782,
+      "label": "201 track",
+      "variant": "return"
+    },
+    {
+      "id": "m15",
+      "from": "user",
+      "to": "app",
+      "y": 822,
+      "label": "曲を選ぶ",
+      "variant": "default"
+    },
+    {
+      "id": "m17",
+      "from": "app",
+      "to": "api",
+      "y": 902,
+      "label": "POST /balloons",
+      "variant": "emphasis",
+      "note": "自分の曲ID、ぼかした出発地点、地名を送る。生の現在地は送らない"
+    },
+    {
+      "id": "m18",
+      "from": "api",
+      "to": "db",
+      "y": 976,
+      "label": "飛行中でなければ風船を作成",
+      "variant": "security",
+      "note": "部分一意制約で1人1個を守る"
+    },
+    {
+      "id": "m19",
+      "from": "db",
+      "to": "api",
+      "y": 1050,
+      "label": "balloon",
+      "variant": "return"
+    },
+    {
+      "id": "m20",
+      "from": "api",
+      "to": "app",
+      "y": 1090,
+      "label": "201 balloon",
+      "variant": "return"
+    },
+    {
+      "id": "m21",
+      "from": "app",
+      "to": "user",
+      "y": 1130,
+      "label": "ボタンが「🎈0回」に変わる",
+      "variant": "return",
+      "note": "他の端末には次の snapshot で届く"
+    },
+    {
+      "id": "m23",
+      "from": "app",
+      "to": "api",
+      "y": 1244,
+      "label": "POST /balloons",
+      "variant": "default"
+    },
+    {
+      "id": "m24",
+      "from": "api",
+      "to": "db",
+      "y": 1284,
+      "label": "風船を作成",
+      "variant": "default"
+    },
+    {
+      "id": "m25",
+      "from": "db",
+      "to": "api",
+      "y": 1324,
+      "label": "一意制約違反",
+      "variant": "return"
+    },
+    {
+      "id": "m26",
+      "from": "api",
+      "to": "app",
+      "y": 1364,
       "label": "409 Conflict",
       "variant": "return",
       "note": "再送の場合に備え、GET /balloons/me で状態を読み直す"
@@ -159,43 +259,79 @@
     {
       "participant": "app",
       "from": 189,
-      "to": 314,
-      "type": "frontend"
-    },
-    {
-      "participant": "app",
-      "from": 383,
-      "to": 622,
+      "to": 400,
       "type": "frontend"
     },
     {
       "participant": "api",
-      "from": 383,
-      "to": 582,
+      "from": 229,
+      "to": 360,
       "type": "backend"
     },
     {
       "participant": "db",
-      "from": 457,
-      "to": 542,
+      "from": 269,
+      "to": 320,
       "type": "database"
     },
     {
       "participant": "app",
-      "from": 725,
-      "to": 856,
+      "from": 469,
+      "to": 828,
       "type": "frontend"
     },
     {
       "participant": "api",
-      "from": 725,
-      "to": 856,
+      "from": 543,
+      "to": 788,
+      "type": "backend"
+    },
+    {
+      "participant": "storage",
+      "from": 617,
+      "to": 668,
+      "type": "cloud"
+    },
+    {
+      "participant": "db",
+      "from": 697,
+      "to": 748,
+      "type": "database"
+    },
+    {
+      "participant": "app",
+      "from": 897,
+      "to": 1136,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 897,
+      "to": 1096,
       "type": "backend"
     },
     {
       "participant": "db",
-      "from": 765,
-      "to": 816,
+      "from": 971,
+      "to": 1056,
+      "type": "database"
+    },
+    {
+      "participant": "app",
+      "from": 1239,
+      "to": 1370,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 1239,
+      "to": 1370,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 1279,
+      "to": 1330,
       "type": "database"
     }
   ],
@@ -218,9 +354,11 @@
     },
     {
       "dot": "amber",
-      "title": "仮置き",
+      "title": "曲",
       "items": [
-        "曲の選び方はアプリ内リストを仮置きしている"
+        "1人が複数の曲を持てる",
+        "飛ばせるのは自分の曲だけ",
+        "形式はmp3のみ、20MBまで"
       ]
     }
   ]

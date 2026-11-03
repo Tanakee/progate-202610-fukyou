@@ -115,6 +115,12 @@
           "key": "pk"
         },
         {
+          "name": "user_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "users.id"
+        },
+        {
           "name": "title",
           "type": "text"
         },
@@ -389,6 +395,15 @@
       "from": "balloons",
       "to": "users",
       "label": "飛ばす",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "track-user",
+      "from": "tracks",
+      "to": "users",
+      "label": "アップロード",
       "fromCardinality": "many",
       "fromOptional": true,
       "toCardinality": "one"

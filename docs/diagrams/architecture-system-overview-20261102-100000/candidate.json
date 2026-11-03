@@ -209,6 +209,12 @@
       "label": "mp3を取得"
     },
     {
+      "id": "api-storage",
+      "from": "api",
+      "to": "storage",
+      "label": "mp3を保存"
+    },
+    {
       "id": "api-db",
       "from": "api",
       "to": "db",
@@ -264,7 +270,8 @@
       "title": "ストレージ",
       "items": [
         "mp3はBEの外に置く",
-        "アプリは /tracks のURLから直接取得する"
+        "アップロードはBEを通して保存する",
+        "再生時はアプリがURLから直接取得する"
       ]
     }
   ]
