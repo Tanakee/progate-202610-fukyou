@@ -1,0 +1,634 @@
+# レビュー用の提案（資料で未指定の部分）
+# - 認証トークンはAuthorizationヘッダーでBearer方式により送信する。JWTとは限定しない。
+# - JSONのキーはsnake_case。エラーのcodeとmessageは必須の文字列とし、codeの具体値は未確定。
+# - 新規登録とログインはいずれもtokenとuserを返す（登録直後にログインする案）。
+# - 単体取得はオブジェクト、一覧取得は配列を直接返す。対象がない一覧は空配列。
+# - /me/balloonsは飛行中の風船を0件または1件含む配列。
+# - 回収はFavorite、再生記録はplay_count、割る操作はballoon_idを返す。
+# - Favoriteには再生に必要なTrackを含める。DBの全項目を公開する設計ではない。
+# - status、end_reasonの値、文字数制限、20MBのバイト換算、未指定のエラー条件は実装担当者とのレビューで確定する。
+# - 座標の対象範囲は資料で未指定のため数値制約を追加しない。
+# 
+# これらのキー名、本文の構造、必須項目、Bearer方式は本定義で提案するもので、実装との合意後に確定する。
+
+openapi: 3.0.3
+
+info:
+  title: 推し風 API
+  description: 推し風のREST API仕様書
+  version: 0.1.0
+
+security:
+  - bearerAuth: []
+
+paths:
+
+#認証と利用者
+
+#| POST | `/auth/signup` | 不要 | 201 | 新規登録 | メール、パスワード |
+  /auth/signup:
+    post:
+      summary: 新規登録
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '201':
+          description: 利用者の新規登録に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+       
+#| POST | `/auth/login` | 不要 | 200 | ログイン | メール、パスワード |
+  /auth/login:
+    post:
+      summary: ログイン
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: ログインに成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+
+#| DELETE | `/auth/session` | 必要 | 204 | ログアウト | なし |
+  /auth/session:
+    delete:
+      summary: ログアウト
+      responses:
+        '204':
+          description: ログアウトに成功
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#| GET | `/me` | 必要 | 200 | ログイン中の利用者を返す | なし |
+  /me:
+    get:
+      summary: ログイン中の利用者を返す
+      responses:
+        '200':
+          description: ログイン中の利用者の取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#曲
+
+#| POST | `/tracks` | 必要 | 201 | 曲をアップロードする | mp3、曲名、アーティスト名 |
+  /tracks:
+    post:
+      summary: 曲をアップロードする
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - artist
+                - file
+              properties:
+                title:
+                  type: string
+                artist:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: 曲のアップロードに成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: mp3ではない、または20MBを超えている
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#| GET | `/tracks/:id` | 不要 | 200 | 曲名、アーティスト名、mp3のURLを返す | 曲ID |
+  /tracks/{id}:
+    get:
+      summary: 曲名、アーティスト名、mp3のURLを返す
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 曲情報の取得に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+
+#| GET | `/me/tracks` | 必要 | 200 | 自分がアップロードした曲の一覧を返す | なし |
+  /me/tracks:
+    get:
+      summary: 自分がアップロードした曲の一覧を返す
+      responses:
+        '200':
+          description: 曲一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Track'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#風船
+
+#| POST | `/balloons` | 必要 | 201 | 風船を飛ばす | 自分の曲ID、ぼかした出発地点、地名 |
+  /balloons:
+    post:
+      summary: 風船を飛ばす
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - track_id
+                - origin_lat
+                - origin_lng
+                - origin_label
+              properties:
+                track_id:
+                  type: string
+                  format: uuid
+                origin_lat:
+                  type: number
+                  format: double
+                origin_lng:
+                  type: number
+                  format: double
+                origin_label:
+                  type: string
+      responses:
+        '201':
+          description: 風船の飛行に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balloon'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 他の人の曲を飛ばそうとした
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 飛行中の風船がある。アプリは /me/balloons を読み直す
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: 出発地点が対象範囲の外にある
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#| GET | `/me/balloons` | 必要 | 200 | 飛行中の自分の風船と回数を返す | なし |
+  /me/balloons:
+    get:
+      summary: 飛行中の自分の風船と回数を返す
+      responses:
+        '200':
+          description: 風船一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Balloon'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#| POST | `/balloons/:id/plays` | 必要 | 200 | 5秒再生されたら回数を加算する（1人1回） | 風船ID |
+  /balloons/{id}/plays:
+    post:
+      summary: 5秒再生されたら回数を加算する（1人1回）。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 再生開始から5秒で回数を加算する（1人1回）。再送や終了済みの風船でも成功とし、回数は増やさない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayResult'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#| POST | `/balloons/:id/collect` | 必要 | 200 | 回収する（1日1回） | 風船ID |
+  /balloons/{id}/collect:
+    post:
+      summary: 回収する（1日1回）
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 回収に成功。回収済みの本人が再送した場合も成功とする
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Favorite'  
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 自分の風船を回収しようとした
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 飛行中ではない。先着に負けた場合を含み、回収回数は消費しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: 今日すでに回収している。1日の区切りは日本時間の0時
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        
+#| POST | `/balloons/:id/pop` | 必要 | 200 | 割る（自分の世界からのみ消す） | 風船ID |
+  /balloons/{id}/pop:
+    post:
+      summary: 割る（自分の世界からのみ消す）
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 自分の世界から風船を消す。再送しても成功とする
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopResult'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+#マイページ
+
+#| GET | `/me/popped` | 必要 | 200 | 割った風船のID一覧を返す | なし |
+  /me/popped:
+    get:
+      summary: 割った風船のID一覧を返す
+      responses:
+        '200':
+          description: 割った風船のID一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#| GET | `/me/favorites` | 必要 | 200 | お気に入り一覧を返す | なし |
+  /me/favorites:
+    get:
+      summary: お気に入り一覧を返す
+      responses:
+        '200':
+          description: お気に入り一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Favorite'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+#| GET | `/me/journeys` | 必要 | 200 | 旅の記録カード一覧を返す | なし |
+  /me/journeys:
+    get:
+      summary: 旅の記録カード一覧を返す
+      responses:
+        '200':
+          description: 旅の記録カード一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Journey'
+        '401':
+          description: トークンがない、または無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  # 共通のレスポンス型（JSONのキー名・型・必須項目はレビュー用の提案）
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 機械判読用のエラーコード。具体的な値は実装担当者とのレビューで確定する。
+        message:
+          type: string
+          description: エラーの説明
+      required:
+      - code
+      - message
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - email
+      - created_at
+    AuthResult:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Bearer認証に使用するトークン。JWT形式は前提としない。
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - token
+      - user
+    Track:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        artist:
+          type: string
+        mp3_url:
+          type: string
+          format: uri
+      required:
+      - id
+      - title
+      - artist
+      - mp3_url
+    Balloon:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        track_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          description: 風船の状態。値の一覧は実装時に確定する。
+        origin_label:
+          type: string
+        origin_lat:
+          type: number
+          format: double
+        origin_lng:
+          type: number
+          format: double
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        speed_east:
+          type: number
+          format: double
+        speed_north:
+          type: number
+          format: double
+        play_count:
+          type: integer
+          minimum: 0
+        launched_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - id
+      - track_id
+      - status
+      - origin_label
+      - origin_lat
+      - origin_lng
+      - lat
+      - lng
+      - speed_east
+      - speed_north
+      - play_count
+      - launched_at
+      - ended_at
+    Favorite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        balloon_id:
+          type: string
+          format: uuid
+        collected_on:
+          type: string
+          format: date
+        track:
+          $ref: '#/components/schemas/Track'
+      required:
+      - id
+      - balloon_id
+      - collected_on
+      - track
+    Journey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        balloon_id:
+          type: string
+          format: uuid
+        end_reason:
+          type: string
+          description: 終了理由。値の一覧は実装時に確定する。
+        end_label:
+          type: string
+        end_lat:
+          type: number
+          format: double
+        end_lng:
+          type: number
+          format: double
+        duration_seconds:
+          type: integer
+          minimum: 0
+        play_count:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - balloon_id
+      - end_reason
+      - end_label
+      - end_lat
+      - end_lng
+      - duration_seconds
+      - play_count
+      - created_at
+    PlayResult:
+      type: object
+      properties:
+        play_count:
+          type: integer
+          minimum: 0
+      required:
+      - play_count
+    PopResult:
+      type: object
+      properties:
+        balloon_id:
+          type: string
+          format: uuid
+      required:
+      - balloon_id
