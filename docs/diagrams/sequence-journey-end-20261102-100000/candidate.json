@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "海や国外で旅が終わる",
+    "subtitle": "風船が陸から離れると割れ、飛ばした人へ記録カードが届く",
+    "animation": "trace",
+    "output": "diagrams/sequence-journey-end-20261102-100000/journey-end.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "ユーザー",
+      "sublabel": "iPhoneを操作"
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "FE: iOSアプリ",
+      "sublabel": "接続中の全端末を含む"
+    },
+    {
+      "id": "ws",
+      "type": "messagebus",
+      "label": "BE: WebSocket",
+      "sublabel": "Action Cable /ws"
+    },
+    {
+      "id": "tick",
+      "type": "backend",
+      "label": "BE: 定期処理",
+      "sublabel": "Webとは別プロセス"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "データベース",
+      "sublabel": "PostgreSQL"
+    }
+  ],
+  "segments": [
+    {
+      "from": 158,
+      "to": 290,
+      "label": "判定"
+    },
+    {
+      "from": 312,
+      "to": 478,
+      "label": "終了処理"
+    },
+    {
+      "from": 500,
+      "to": 780,
+      "label": "配信"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "tick",
+      "to": "db",
+      "y": 194,
+      "label": "飛行中の風船を読む",
+      "variant": "default",
+      "note": "5秒ごとの位置計算で、日本の陸地マスクや範囲の外へ出たかを判定する"
+    },
+    {
+      "id": "m2",
+      "from": "db",
+      "to": "tick",
+      "y": 268,
+      "label": "風船",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "tick",
+      "to": "db",
+      "y": 348,
+      "label": "flying の風船だけ lost へ更新",
+      "variant": "emphasis",
+      "note": "更新できたときだけ記録カードを作る。回収と競合しても壊れない"
+    },
+    {
+      "id": "m5",
+      "from": "db",
+      "to": "tick",
+      "y": 422,
+      "label": "記録カード",
+      "variant": "return",
+      "note": "出発地、終わった場所、旅の時間、流された回数を残す"
+    },
+    {
+      "id": "m7",
+      "from": "tick",
+      "to": "ws",
+      "y": 536,
+      "label": "Solid Cableへ発行",
+      "variant": "dashed"
+    },
+    {
+      "id": "m8",
+      "from": "ws",
+      "to": "app",
+      "y": 576,
+      "label": "balloon.removed",
+      "variant": "dashed",
+      "note": "全アプリへ配信。地図から風船が消える"
+    },
+    {
+      "id": "m9",
+      "from": "ws",
+      "to": "app",
+      "y": 650,
+      "label": "balloon.ended",
+      "variant": "dashed",
+      "note": "飛ばした人のアプリへ"
+    },
+    {
+      "id": "m10",
+      "from": "app",
+      "to": "user",
+      "y": 724,
+      "label": "旅の結果を表示",
+      "variant": "return",
+      "note": "例: 福岡を出発し、3日間旅をして太平洋に消えました"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "tick",
+      "from": 189,
+      "to": 274,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 189,
+      "to": 274,
+      "type": "database"
+    },
+    {
+      "participant": "tick",
+      "from": 343,
+      "to": 428,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 343,
+      "to": 428,
+      "type": "database"
+    },
+    {
+      "participant": "tick",
+      "from": 531,
+      "to": 542,
+      "type": "backend"
+    },
+    {
+      "participant": "ws",
+      "from": 531,
+      "to": 656,
+      "type": "messagebus"
+    },
+    {
+      "participant": "app",
+      "from": 571,
+      "to": 730,
+      "type": "frontend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "風船の終わり",
+      "items": [
+        "回収される",
+        "海や国外へ出る",
+        "時間切れと自分で割る操作はなし"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "次の曲",
+      "items": [
+        "旅が終わると次の風船を飛ばせる"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "地名",
+      "items": [
+        "出発地は端末の逆ジオコーディング",
+        "終わった場所は海域の矩形テーブル"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "偏西風",
+      "items": [
+        "日本の風は西から東へ吹くことが多い",
+        "太平洋に風船がたまるのを防ぐ"
+      ]
+    }
+  ]
+}

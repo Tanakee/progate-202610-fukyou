@@ -1,0 +1,118 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "風船の状態遷移",
+    "subtitle": "風船の終わり方は、回収か、海や国外へ出るかの2通り",
+    "animation": "trace",
+    "output": "diagrams/lifecycle-balloon-state-20261102-100000/balloon-state.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "mainPath": [
+    "created",
+    "flying",
+    "collected",
+    "carded"
+  ],
+  "states": [
+    {
+      "id": "created",
+      "type": "start",
+      "label": "作成",
+      "sublabel": "POST /balloons",
+      "step": "01"
+    },
+    {
+      "id": "flying",
+      "type": "active",
+      "label": "飛行中",
+      "sublabel": "風に乗って移動",
+      "tag": "5秒ごとに配信",
+      "step": "02"
+    },
+    {
+      "id": "collected",
+      "type": "success",
+      "label": "回収済み",
+      "sublabel": "お気に入りへ保存",
+      "tag": "全員から消える",
+      "step": "03"
+    },
+    {
+      "id": "carded",
+      "type": "neutral",
+      "label": "記録カード",
+      "sublabel": "旅の記録が残る",
+      "tag": "終端",
+      "step": "04"
+    },
+    {
+      "id": "lost",
+      "type": "failure",
+      "label": "割れた",
+      "sublabel": "海や国外へ出た",
+      "tag": "全員から消える"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "launch",
+      "from": "created",
+      "to": "flying",
+      "label": "飛ばす"
+    },
+    {
+      "id": "collect",
+      "from": "flying",
+      "to": "collected",
+      "label": "回収",
+      "variant": "emphasis"
+    },
+    {
+      "id": "card-collected",
+      "from": "collected",
+      "to": "carded",
+      "label": "カード作成"
+    },
+    {
+      "id": "leave",
+      "from": "flying",
+      "to": "lost",
+      "label": "海や国外へ",
+      "variant": "dashed"
+    },
+    {
+      "id": "card-lost",
+      "from": "lost",
+      "to": "carded",
+      "label": "カード作成"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "状態にしないもの",
+      "items": [
+        "status の値は flying、collected、lost の3つ",
+        "記録カードは journeys の行で表し、status には持たない",
+        "割るはその人の表示から消すだけで、風船の状態は変えない"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "次の曲",
+      "items": [
+        "記録カードができると、飛ばした人は次の風船を飛ばせる"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "運用",
+      "items": [
+        "時間切れはない",
+        "デモ前に rake で全消去とボット風船の投入を行う"
+      ]
+    }
+  ]
+}

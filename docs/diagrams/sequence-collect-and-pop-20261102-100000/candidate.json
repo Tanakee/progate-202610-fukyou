@@ -1,0 +1,374 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "回収と割る",
+    "subtitle": "回収は全員の世界から消え、割るは自分の世界からだけ消える",
+    "animation": "trace",
+    "output": "diagrams/sequence-collect-and-pop-20261102-100000/collect-and-pop.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "ユーザー",
+      "sublabel": "iPhoneを操作"
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "FE: iOSアプリ",
+      "sublabel": "接続中の全端末を含む"
+    },
+    {
+      "id": "ws",
+      "type": "messagebus",
+      "label": "BE: WebSocket",
+      "sublabel": "Action Cable /ws"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "BE: REST API",
+      "sublabel": "Rails API"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "データベース",
+      "sublabel": "PostgreSQL"
+    }
+  ],
+  "segments": [
+    {
+      "from": 158,
+      "to": 598,
+      "label": "回収の成功"
+    },
+    {
+      "from": 620,
+      "to": 900,
+      "label": "通知"
+    },
+    {
+      "from": 922,
+      "to": 1208,
+      "label": "回収の失敗"
+    },
+    {
+      "from": 1230,
+      "to": 1590,
+      "label": "割る"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "app",
+      "y": 194,
+      "label": "回収する",
+      "variant": "emphasis",
+      "note": "操作方法は保留。当面は再生バーのボタン"
+    },
+    {
+      "id": "m2",
+      "from": "app",
+      "to": "api",
+      "y": 268,
+      "label": "POST /balloons/:id/collect",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m3",
+      "from": "api",
+      "to": "db",
+      "y": 308,
+      "label": "flying の風船だけ collected へ更新",
+      "variant": "security",
+      "note": "1トランザクションで処理する。更新できた1人が先着"
+    },
+    {
+      "id": "m4",
+      "from": "db",
+      "to": "api",
+      "y": 382,
+      "label": "1行更新",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "api",
+      "to": "db",
+      "y": 422,
+      "label": "お気に入りと記録カードを作成",
+      "variant": "emphasis",
+      "note": "collected_on は日本時間の日付"
+    },
+    {
+      "id": "m6",
+      "from": "db",
+      "to": "api",
+      "y": 496,
+      "label": "favorite",
+      "variant": "return"
+    },
+    {
+      "id": "m7",
+      "from": "api",
+      "to": "app",
+      "y": 536,
+      "label": "200 お気に入り",
+      "variant": "return"
+    },
+    {
+      "id": "m8",
+      "from": "app",
+      "to": "user",
+      "y": 576,
+      "label": "お気に入りに保存",
+      "variant": "return"
+    },
+    {
+      "id": "m10",
+      "from": "api",
+      "to": "ws",
+      "y": 656,
+      "label": "回収イベント",
+      "variant": "dashed"
+    },
+    {
+      "id": "m11",
+      "from": "ws",
+      "to": "app",
+      "y": 696,
+      "label": "balloon.removed",
+      "variant": "dashed",
+      "note": "全アプリへ配信。地図から風船が消える"
+    },
+    {
+      "id": "m12",
+      "from": "ws",
+      "to": "app",
+      "y": 770,
+      "label": "balloon.collected",
+      "variant": "dashed",
+      "note": "飛ばした人のアプリへ。再生中ならローカル通知を出す"
+    },
+    {
+      "id": "m13",
+      "from": "ws",
+      "to": "app",
+      "y": 844,
+      "label": "balloon.ended",
+      "variant": "dashed",
+      "note": "飛ばした人のアプリへ"
+    },
+    {
+      "id": "m15",
+      "from": "app",
+      "to": "api",
+      "y": 958,
+      "label": "POST /balloons/:id/collect",
+      "variant": "default"
+    },
+    {
+      "id": "m16",
+      "from": "api",
+      "to": "db",
+      "y": 998,
+      "label": "flying の風船だけ collected へ更新",
+      "variant": "security"
+    },
+    {
+      "id": "m17",
+      "from": "db",
+      "to": "api",
+      "y": 1038,
+      "label": "0行、または一意制約違反",
+      "variant": "return"
+    },
+    {
+      "id": "m18",
+      "from": "api",
+      "to": "app",
+      "y": 1078,
+      "label": "409 先着に負けた",
+      "variant": "return",
+      "note": "更新が0行のとき。回収回数は消費しない"
+    },
+    {
+      "id": "m19",
+      "from": "api",
+      "to": "app",
+      "y": 1152,
+      "label": "429 今日は回収済み",
+      "variant": "return",
+      "note": "一意制約違反のとき。ロールバックして風船は消さない"
+    },
+    {
+      "id": "m21",
+      "from": "user",
+      "to": "app",
+      "y": 1266,
+      "label": "風船をタップ、またはスマホを振る",
+      "variant": "emphasis",
+      "note": "振る操作はアプリを開いているときだけ"
+    },
+    {
+      "id": "m22",
+      "from": "app",
+      "to": "api",
+      "y": 1340,
+      "label": "POST /balloons/:id/pop",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m23",
+      "from": "api",
+      "to": "db",
+      "y": 1380,
+      "label": "割った記録を保存",
+      "variant": "default"
+    },
+    {
+      "id": "m24",
+      "from": "db",
+      "to": "api",
+      "y": 1420,
+      "label": "保存完了",
+      "variant": "return"
+    },
+    {
+      "id": "m25",
+      "from": "api",
+      "to": "app",
+      "y": 1460,
+      "label": "200",
+      "variant": "return",
+      "note": "再送しても200を返す"
+    },
+    {
+      "id": "m26",
+      "from": "app",
+      "to": "user",
+      "y": 1534,
+      "label": "次に近い風船へ進む",
+      "variant": "return",
+      "note": "他の人には影響せず、飛ばした人にも通知しない"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "app",
+      "from": 189,
+      "to": 582,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 263,
+      "to": 542,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 303,
+      "to": 502,
+      "type": "database"
+    },
+    {
+      "participant": "api",
+      "from": 651,
+      "to": 662,
+      "type": "backend"
+    },
+    {
+      "participant": "ws",
+      "from": 651,
+      "to": 850,
+      "type": "messagebus"
+    },
+    {
+      "participant": "app",
+      "from": 691,
+      "to": 850,
+      "type": "frontend"
+    },
+    {
+      "participant": "app",
+      "from": 953,
+      "to": 1158,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 953,
+      "to": 1158,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 993,
+      "to": 1044,
+      "type": "database"
+    },
+    {
+      "participant": "app",
+      "from": 1261,
+      "to": 1540,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 1335,
+      "to": 1466,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 1375,
+      "to": 1426,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "回収",
+      "items": [
+        "1人1日1回",
+        "全員の世界から消える",
+        "飛ばした人に通知する"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "再送",
+      "items": [
+        "回収済みの本人が再送したら200",
+        "自分の風船の回収は403"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "割る",
+      "items": [
+        "回数制限なし",
+        "その人には二度と流れない",
+        "他の人には影響しない"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "通知の制約",
+      "items": [
+        "APNsは使わない",
+        "再生していないときは通知が届かない",
+        "起動時に /me/journeys で取り戻す"
+      ]
+    }
+  ]
+}

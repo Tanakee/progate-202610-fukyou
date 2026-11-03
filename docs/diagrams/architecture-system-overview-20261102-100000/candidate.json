@@ -1,0 +1,278 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "推し風（仮）システム全体像",
+    "subtitle": "FEは現在地を端末に残し、BEは風船の位置だけを配信する",
+    "animation": "trace",
+    "output": "diagrams/architecture-system-overview-20261102-100000/system-overview.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "ユーザー",
+      "sublabel": "iPhone",
+      "pos": [
+        40,
+        262
+      ],
+      "size": [
+        120,
+        64
+      ]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "iOSアプリ",
+      "sublabel": "3D地図と再生",
+      "pos": [
+        240,
+        180
+      ],
+      "size": [
+        150,
+        88
+      ],
+      "tag": "画面"
+    },
+    {
+      "id": "device",
+      "type": "frontend",
+      "label": "端末内処理",
+      "sublabel": "補間とカウント",
+      "pos": [
+        240,
+        340
+      ],
+      "size": [
+        150,
+        88
+      ],
+      "tag": "最寄り判定"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "REST API",
+      "sublabel": "Rails API",
+      "pos": [
+        540,
+        180
+      ],
+      "size": [
+        150,
+        72
+      ]
+    },
+    {
+      "id": "ws",
+      "type": "messagebus",
+      "label": "WebSocket",
+      "sublabel": "Action Cable /ws",
+      "pos": [
+        540,
+        340
+      ],
+      "size": [
+        150,
+        72
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "データベース",
+      "sublabel": "PostgreSQL",
+      "pos": [
+        800,
+        180
+      ],
+      "size": [
+        170,
+        72
+      ]
+    },
+    {
+      "id": "tick",
+      "type": "backend",
+      "label": "位置計算",
+      "sublabel": "別プロセスで5秒ごと",
+      "pos": [
+        800,
+        340
+      ],
+      "size": [
+        170,
+        72
+      ],
+      "tag": "海や国外の判定"
+    },
+    {
+      "id": "wind",
+      "type": "backend",
+      "label": "風データ取得",
+      "sublabel": "別プロセスで3時間ごと",
+      "pos": [
+        1080,
+        180
+      ],
+      "size": [
+        170,
+        72
+      ]
+    },
+    {
+      "id": "om",
+      "type": "external",
+      "label": "Open-Meteo",
+      "sublabel": "1度格子 約830地点",
+      "pos": [
+        1080,
+        40
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "storage",
+      "type": "cloud",
+      "label": "ストレージ",
+      "sublabel": "mp3ファイル",
+      "pos": [
+        540,
+        560
+      ],
+      "size": [
+        150,
+        72
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "FE（アプリ）",
+      "wraps": [
+        "app",
+        "device"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "BE（Rails）",
+      "wraps": [
+        "api",
+        "ws",
+        "db",
+        "tick",
+        "wind"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "user-app",
+      "from": "user",
+      "to": "app",
+      "label": "操作"
+    },
+    {
+      "id": "app-api",
+      "from": "app",
+      "to": "api",
+      "label": "REST 操作",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ws-device",
+      "from": "ws",
+      "to": "device",
+      "label": "位置 5秒ごと",
+      "variant": "emphasis"
+    },
+    {
+      "id": "device-app",
+      "from": "device",
+      "to": "app",
+      "label": "再生する曲"
+    },
+    {
+      "id": "device-storage",
+      "from": "device",
+      "to": "storage",
+      "label": "mp3を取得"
+    },
+    {
+      "id": "api-storage",
+      "from": "api",
+      "to": "storage",
+      "label": "mp3を保存"
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "db",
+      "label": "読み書き"
+    },
+    {
+      "id": "tick-db",
+      "from": "tick",
+      "to": "db",
+      "label": "風と位置"
+    },
+    {
+      "id": "tick-ws",
+      "from": "tick",
+      "to": "ws",
+      "label": "Solid Cable"
+    },
+    {
+      "id": "wind-db",
+      "from": "wind",
+      "to": "db",
+      "label": "格子保存"
+    },
+    {
+      "id": "om-wind",
+      "from": "om",
+      "to": "wind",
+      "label": "風速と風向",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "FEの担当",
+      "items": [
+        "3D地図、再生、ローカル通知",
+        "一番近い風船の判定と位置の補間",
+        "現在地はBEへ送らない"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "BEの担当",
+      "items": [
+        "RailsのWebプロセスが認証、回収、回数を管理する",
+        "別プロセスが位置計算と風データ取得を行う",
+        "Solid CableがPostgreSQL経由で配信を橋渡しする"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "ストレージ",
+      "items": [
+        "mp3はBEの外に置く",
+        "アップロードはBEを通して保存する",
+        "再生時はアプリがURLから直接取得する"
+      ]
+    }
+  ]
+}

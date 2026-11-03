@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "風データ取得と位置配信",
+    "subtitle": "どちらもBEの定期処理。風は3時間ごと、位置は5秒ごと",
+    "animation": "trace",
+    "output": "diagrams/sequence-wind-tick-20261102-100000/wind-tick.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "ユーザー",
+      "sublabel": "iPhoneを操作"
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "FE: iOSアプリ",
+      "sublabel": "接続中の全端末を含む"
+    },
+    {
+      "id": "ws",
+      "type": "messagebus",
+      "label": "BE: WebSocket",
+      "sublabel": "Action Cable /ws"
+    },
+    {
+      "id": "tick",
+      "type": "backend",
+      "label": "BE: 定期処理",
+      "sublabel": "Webとは別プロセス"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "データベース",
+      "sublabel": "PostgreSQL"
+    },
+    {
+      "id": "om",
+      "type": "external",
+      "label": "Open-Meteo",
+      "sublabel": "風データ"
+    }
+  ],
+  "segments": [
+    {
+      "from": 158,
+      "to": 364,
+      "label": "3時間ごとの風データ取得"
+    },
+    {
+      "from": 386,
+      "to": 626,
+      "label": "5秒ごとの位置計算"
+    },
+    {
+      "from": 648,
+      "to": 820,
+      "label": "配信"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "tick",
+      "to": "om",
+      "y": 194,
+      "label": "約830地点の風を3回に分けて取得",
+      "variant": "dashed",
+      "note": "300地点ずつ。予報も含めて取得する"
+    },
+    {
+      "id": "m2",
+      "from": "om",
+      "to": "tick",
+      "y": 268,
+      "label": "風速と風向",
+      "variant": "return"
+    },
+    {
+      "id": "m3",
+      "from": "tick",
+      "to": "db",
+      "y": 308,
+      "label": "有効時刻付きで保存",
+      "variant": "emphasis",
+      "note": "取得に失敗したら前回の予報で動かし続ける"
+    },
+    {
+      "id": "m5",
+      "from": "tick",
+      "to": "db",
+      "y": 422,
+      "label": "飛行中の風船を読む",
+      "variant": "default",
+      "note": "advisory lockで1プロセスだけが動く"
+    },
+    {
+      "id": "m6",
+      "from": "db",
+      "to": "tick",
+      "y": 496,
+      "label": "風船",
+      "variant": "return",
+      "note": "格子はメモリに持ち、実測の経過時間で位置を動かす"
+    },
+    {
+      "id": "m7",
+      "from": "tick",
+      "to": "db",
+      "y": 570,
+      "label": "位置と速度の列だけ更新",
+      "variant": "emphasis",
+      "note": "status が flying の行だけを更新する"
+    },
+    {
+      "id": "m9",
+      "from": "tick",
+      "to": "ws",
+      "y": 684,
+      "label": "Solid Cableへ発行",
+      "variant": "dashed"
+    },
+    {
+      "id": "m10",
+      "from": "ws",
+      "to": "app",
+      "y": 724,
+      "label": "balloons.snapshot",
+      "variant": "emphasis",
+      "note": "全アプリへ配信。次の配信までは端末が位置と速度から補間する"
+    },
+    {
+      "id": "m11",
+      "from": "app",
+      "to": "user",
+      "y": 798,
+      "label": "地図の風船が動く",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "tick",
+      "from": 189,
+      "to": 314,
+      "type": "backend"
+    },
+    {
+      "participant": "om",
+      "from": 189,
+      "to": 274,
+      "type": "external"
+    },
+    {
+      "participant": "db",
+      "from": 303,
+      "to": 314,
+      "type": "database"
+    },
+    {
+      "participant": "tick",
+      "from": 417,
+      "to": 576,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 417,
+      "to": 576,
+      "type": "database"
+    },
+    {
+      "participant": "tick",
+      "from": 679,
+      "to": 690,
+      "type": "backend"
+    },
+    {
+      "participant": "ws",
+      "from": 679,
+      "to": 730,
+      "type": "messagebus"
+    },
+    {
+      "participant": "app",
+      "from": 719,
+      "to": 804,
+      "type": "frontend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "2つの周期",
+      "items": [
+        "風データは3時間ごと",
+        "位置の計算と配信は5秒ごと",
+        "5秒の処理ではOpen-Meteoを呼ばない"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "速度",
+      "items": [
+        "初期値は実際の風と等倍",
+        "サーバー全体の倍率で調整し、デモでは早送りする"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "止めない工夫",
+      "items": [
+        "例外が起きてもループを続ける",
+        "前回の処理が終わっていなければ次を飛ばす"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "接続時",
+      "items": [
+        "WebSocket接続時にもsnapshotを1回送る"
+      ]
+    }
+  ]
+}
