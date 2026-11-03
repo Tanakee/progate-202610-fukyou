@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "風データが曲になるまで",
+    "subtitle": "オープンデータの風が、風船の位置を経て端末の再生を決める",
+    "animation": "trace",
+    "output": "diagrams/dataflow-wind-to-balloon-20261102-100000/wind-to-balloon.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "stages": [
+    {
+      "label": "公開データ"
+    },
+    {
+      "label": "BE 取得"
+    },
+    {
+      "label": "BE 保存"
+    },
+    {
+      "label": "BE 計算"
+    },
+    {
+      "label": "BE 配信とFE 再生"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "om",
+      "type": "external",
+      "label": "Open-Meteo",
+      "sublabel": "気象モデル",
+      "stage": 0,
+      "row": 1
+    },
+    {
+      "id": "wind",
+      "type": "backend",
+      "label": "風データ取得",
+      "sublabel": "3時間ごと",
+      "stage": 1,
+      "row": 1
+    },
+    {
+      "id": "grid",
+      "type": "database",
+      "label": "wind_grid",
+      "sublabel": "風の格子",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "balloons",
+      "type": "database",
+      "label": "balloons",
+      "sublabel": "風船",
+      "stage": 2,
+      "row": 2
+    },
+    {
+      "id": "tick",
+      "type": "backend",
+      "label": "位置計算",
+      "sublabel": "5秒ごと",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "ws",
+      "type": "messagebus",
+      "label": "WebSocket",
+      "sublabel": "snapshot",
+      "stage": 4,
+      "row": 0
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "iOSアプリ",
+      "sublabel": "最寄り判定と再生",
+      "stage": 4,
+      "row": 2
+    }
+  ],
+  "flows": [
+    {
+      "id": "om-wind",
+      "from": "om",
+      "to": "wind",
+      "label": "風速と風向",
+      "variant": "dashed"
+    },
+    {
+      "id": "wind-grid",
+      "from": "wind",
+      "to": "grid",
+      "label": "約830地点",
+      "variant": "emphasis"
+    },
+    {
+      "id": "grid-tick",
+      "from": "grid",
+      "to": "tick",
+      "label": "補間した風",
+      "variant": "emphasis"
+    },
+    {
+      "id": "tick-balloons",
+      "from": "tick",
+      "to": "balloons",
+      "label": "新しい位置"
+    },
+    {
+      "id": "tick-ws",
+      "from": "tick",
+      "to": "ws",
+      "label": "全風船の状態",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ws-app",
+      "from": "ws",
+      "to": "app",
+      "label": "位置と速度",
+      "variant": "emphasis"
+    },
+    {
+      "id": "app-balloons",
+      "from": "app",
+      "to": "balloons",
+      "label": "ぼかした出発地点"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "テーマとの関係",
+      "items": [
+        "風データを抜くと風船は動かない",
+        "オープンデータがサービスの前提になっている"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "端末に残るもの",
+      "items": [
+        "現在地",
+        "一番近い風船の判定結果"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "ログイン",
+    "subtitle": "操作が必要になった時点でログインを求め、元の操作へ戻る",
+    "animation": "trace",
+    "output": "diagrams/sequence-auth-login-20261102-100000/auth-login.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "ユーザー",
+      "sublabel": "iPhoneを操作"
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "FE: iOSアプリ",
+      "sublabel": "接続中の全端末を含む"
+    },
+    {
+      "id": "ws",
+      "type": "messagebus",
+      "label": "BE: WebSocket",
+      "sublabel": "Action Cable /ws"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "BE: REST API",
+      "sublabel": "Rails API"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "データベース",
+      "sublabel": "PostgreSQL"
+    }
+  ],
+  "segments": [
+    {
+      "from": 158,
+      "to": 290,
+      "label": "未ログインの閲覧"
+    },
+    {
+      "from": 312,
+      "to": 598,
+      "label": "新規登録"
+    },
+    {
+      "from": 620,
+      "to": 952,
+      "label": "ログイン"
+    },
+    {
+      "from": 974,
+      "to": 1146,
+      "label": "トークンが無効なとき"
+    },
+    {
+      "from": 1168,
+      "to": 1386,
+      "label": "ログアウト"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "app",
+      "y": 194,
+      "label": "飛ばす、回収、流すを押す",
+      "variant": "emphasis",
+      "note": "地図の閲覧だけならログインは不要"
+    },
+    {
+      "id": "m2",
+      "from": "app",
+      "to": "user",
+      "y": 268,
+      "label": "ログイン画面を表示",
+      "variant": "return"
+    },
+    {
+      "id": "m4",
+      "from": "user",
+      "to": "app",
+      "y": 348,
+      "label": "メールとパスワード",
+      "variant": "default"
+    },
+    {
+      "id": "m5",
+      "from": "app",
+      "to": "api",
+      "y": 388,
+      "label": "POST /auth/signup",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m6",
+      "from": "api",
+      "to": "db",
+      "y": 428,
+      "label": "ハッシュ化して保存",
+      "variant": "security",
+      "note": "メールの実在確認はしない"
+    },
+    {
+      "id": "m7",
+      "from": "db",
+      "to": "api",
+      "y": 502,
+      "label": "user",
+      "variant": "return"
+    },
+    {
+      "id": "m8",
+      "from": "api",
+      "to": "app",
+      "y": 542,
+      "label": "201 トークン",
+      "variant": "return",
+      "note": "ハッシュ化してDBに保存し、平文は端末のKeychainだけに残す"
+    },
+    {
+      "id": "m10",
+      "from": "user",
+      "to": "app",
+      "y": 656,
+      "label": "メールとパスワード",
+      "variant": "default"
+    },
+    {
+      "id": "m11",
+      "from": "app",
+      "to": "api",
+      "y": 696,
+      "label": "POST /auth/login",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m12",
+      "from": "api",
+      "to": "db",
+      "y": 736,
+      "label": "password_digest を照合",
+      "variant": "security"
+    },
+    {
+      "id": "m13",
+      "from": "db",
+      "to": "api",
+      "y": 776,
+      "label": "user",
+      "variant": "return"
+    },
+    {
+      "id": "m14",
+      "from": "api",
+      "to": "app",
+      "y": 816,
+      "label": "200 トークン",
+      "variant": "return"
+    },
+    {
+      "id": "m15",
+      "from": "app",
+      "to": "ws",
+      "y": 856,
+      "label": "/ws へ再接続",
+      "variant": "emphasis",
+      "note": "トークンを付けて本人用チャンネルを購読する"
+    },
+    {
+      "id": "m16",
+      "from": "app",
+      "to": "user",
+      "y": 930,
+      "label": "元の操作を再開",
+      "variant": "return"
+    },
+    {
+      "id": "m18",
+      "from": "app",
+      "to": "api",
+      "y": 1010,
+      "label": "トークン付きのリクエスト",
+      "variant": "default"
+    },
+    {
+      "id": "m19",
+      "from": "api",
+      "to": "app",
+      "y": 1050,
+      "label": "401",
+      "variant": "return",
+      "note": "Keychainのトークンを消す"
+    },
+    {
+      "id": "m20",
+      "from": "app",
+      "to": "user",
+      "y": 1124,
+      "label": "ログイン画面へ戻す",
+      "variant": "return"
+    },
+    {
+      "id": "m22",
+      "from": "user",
+      "to": "app",
+      "y": 1204,
+      "label": "ログアウト",
+      "variant": "default"
+    },
+    {
+      "id": "m23",
+      "from": "app",
+      "to": "api",
+      "y": 1244,
+      "label": "DELETE /auth/session",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m24",
+      "from": "api",
+      "to": "db",
+      "y": 1284,
+      "label": "トークンを削除",
+      "variant": "default"
+    },
+    {
+      "id": "m25",
+      "from": "api",
+      "to": "app",
+      "y": 1324,
+      "label": "204",
+      "variant": "return"
+    },
+    {
+      "id": "m26",
+      "from": "app",
+      "to": "ws",
+      "y": 1364,
+      "label": "/ws へ匿名で再接続",
+      "variant": "default"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "app",
+      "from": 189,
+      "to": 274,
+      "type": "frontend"
+    },
+    {
+      "participant": "app",
+      "from": 343,
+      "to": 548,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 383,
+      "to": 548,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 423,
+      "to": 508,
+      "type": "database"
+    },
+    {
+      "participant": "app",
+      "from": 651,
+      "to": 936,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 691,
+      "to": 822,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 731,
+      "to": 782,
+      "type": "database"
+    },
+    {
+      "participant": "ws",
+      "from": 851,
+      "to": 862,
+      "type": "messagebus"
+    },
+    {
+      "participant": "app",
+      "from": 1005,
+      "to": 1130,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 1005,
+      "to": 1056,
+      "type": "backend"
+    },
+    {
+      "participant": "app",
+      "from": 1199,
+      "to": 1370,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 1239,
+      "to": 1330,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 1279,
+      "to": 1290,
+      "type": "database"
+    },
+    {
+      "participant": "ws",
+      "from": 1359,
+      "to": 1370,
+      "type": "messagebus"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "割り切り",
+      "items": [
+        "パスワード再設定は作らない",
+        "トークンは無期限",
+        "デモ端末は事前にログインしておく"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "トークン",
+      "items": [
+        "個人向けAPIと本人用チャンネルはトークンを要求する",
+        "全員向けの閲覧は匿名で接続できる"
+      ]
+    }
+  ]
+}

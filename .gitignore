@@ -1,0 +1,8 @@
+# macOS
+.DS_Store
+
+# Archify の生成ログ（PC内のフルパスを含む）
+docs/diagrams/**/*.finalize.json
+docs/diagrams/**/*.finalize-summary.json
+docs/diagrams/**/*.delivery.json
+docs/diagrams/**/*.browser-check.json

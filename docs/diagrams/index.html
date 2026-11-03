@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>推し風 図面一覧</title>
+<style>
+:root { --bg:#f7f7f5; --fg:#1f2328; --sub:#656d76; --line:#d8dee4; --link:#0969da; }
+@media (prefers-color-scheme: dark) { :root { --bg:#16181c; --fg:#e6e8eb; --sub:#9aa4af; --line:#30363d; --link:#58a6ff; } }
+body { margin:0; padding:32px 16px; background:var(--bg); color:var(--fg); font:16px/1.7 -apple-system,"Hiragino Sans",sans-serif; }
+main { max-width:720px; margin:0 auto; }
+h1 { font-size:24px; margin:0 0 4px; }
+h2 { font-size:15px; color:var(--sub); margin:28px 0 8px; }
+a { color:var(--link); text-decoration:none; font-weight:600; }
+li { list-style:none; padding:8px 0; border-top:1px solid var(--line); }
+ul { margin:0; padding:0; }
+span { display:block; color:var(--sub); font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+<h1>推し風（仮）図面一覧</h1>
+<h2>全体</h2>
+<ul>
+<li><a href="architecture-system-overview-20261102-100000/system-overview.html">システム全体像</a><span>FE、BE、ストレージ、風データのつながり</span></li>
+<li><a href="dataflow-wind-to-balloon-20261102-100000/wind-to-balloon.html">風データが曲になるまで</a><span>オープンデータから再生までの流れ</span></li>
+<li><a href="erd-data-model-20261102-100000/data-model.html">データモデル案</a><span>API設計から導いたテーブル案</span></li>
+</ul>
+<h2>APIシーケンス</h2>
+<ul>
+<li><a href="sequence-auth-login-20261102-100000/auth-login.html">ログイン</a><span>/auth/signup、/auth/login</span></li>
+<li><a href="sequence-launch-balloon-20261102-100000/launch-balloon.html">風船を飛ばす</a><span>/tracks、/balloons</span></li>
+<li><a href="sequence-wind-tick-20261102-100000/wind-tick.html">風データ取得と位置配信</a><span>3時間ごとの取得と、balloons.snapshot</span></li>
+<li><a href="sequence-listen-and-count-20261102-100000/listen-and-count.html">聴く、回数を数える</a><span>最寄り判定、/balloons/:id/plays</span></li>
+<li><a href="sequence-collect-and-pop-20261102-100000/collect-and-pop.html">回収と割る</a><span>/balloons/:id/collect、/balloons/:id/pop</span></li>
+<li><a href="sequence-journey-end-20261102-100000/journey-end.html">海や国外で旅が終わる</a><span>balloon.removed、balloon.ended</span></li>
+</ul>
+<h2>状態遷移</h2>
+<ul>
+<li><a href="lifecycle-balloon-state-20261102-100000/balloon-state.html">風船の状態遷移</a><span>作成から記録カードまで</span></li>
+<li><a href="lifecycle-playback-state-20261102-100000/playback-state.html">再生の状態遷移</a><span>流す設定、フェード、一時停止</span></li>
+</ul>
+</main>
+</body>
+</html>

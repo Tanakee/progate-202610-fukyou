@@ -1,0 +1,125 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "再生の状態遷移",
+    "subtitle": "流す設定、イヤホン、音声の割り込み、一番近い風船の変化で再生状態が変わる",
+    "animation": "trace",
+    "output": "diagrams/lifecycle-playback-state-20261102-100000/playback-state.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "mainPath": [
+    "off",
+    "finding",
+    "playing"
+  ],
+  "states": [
+    {
+      "id": "off",
+      "type": "start",
+      "label": "流さない",
+      "sublabel": "初期値",
+      "step": "01"
+    },
+    {
+      "id": "finding",
+      "type": "decision",
+      "label": "判定中",
+      "sublabel": "無音ループで動かし続ける",
+      "step": "02"
+    },
+    {
+      "id": "playing",
+      "type": "active",
+      "label": "再生中",
+      "sublabel": "バックグラウンド可",
+      "tag": "5秒で1回",
+      "step": "03"
+    },
+    {
+      "id": "crossfade",
+      "type": "active",
+      "label": "フェード中",
+      "sublabel": "次の曲へ切り替え"
+    },
+    {
+      "id": "paused",
+      "type": "waiting",
+      "label": "一時停止",
+      "sublabel": "イヤホン外れ、着信など"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "on",
+      "from": "off",
+      "to": "finding",
+      "label": "流すをON"
+    },
+    {
+      "id": "found",
+      "from": "finding",
+      "to": "playing",
+      "label": "風船を発見",
+      "variant": "emphasis"
+    },
+    {
+      "id": "changed",
+      "from": "playing",
+      "to": "crossfade",
+      "label": "最寄りが変化"
+    },
+    {
+      "id": "faded",
+      "from": "crossfade",
+      "to": "playing",
+      "label": "切り替え完了"
+    },
+    {
+      "id": "gone",
+      "from": "playing",
+      "to": "finding",
+      "label": "割る、消えた"
+    },
+    {
+      "id": "unplug",
+      "from": "playing",
+      "to": "paused",
+      "label": "中断",
+      "variant": "dashed"
+    },
+    {
+      "id": "resume",
+      "from": "paused",
+      "to": "playing",
+      "label": "再開の操作、割り込み終了"
+    },
+    {
+      "id": "stop",
+      "from": "playing",
+      "to": "off",
+      "label": "流すをOFF"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "切り替え判定",
+      "items": [
+        "一番近い風船の判定は30秒に1回",
+        "風船が消えた場合はすぐ次を探す",
+        "最寄りが同じまま曲が終わったらループする"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "要確認",
+      "items": [
+        "無音の間もアプリと通信を維持できるか実機で検証する",
+        "音声の中断と再開はAVAudioSessionの通知で扱う",
+        "再開はイヤホン接続ではなくロック画面やアプリの操作で行う"
+      ]
+    }
+  ]
+}

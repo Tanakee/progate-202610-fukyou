@@ -1,0 +1,466 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "データモデル案",
+    "subtitle": "API設計から導いた案。テーブル定義は実装時に確定する",
+    "views": [
+      {
+        "id": "core",
+        "label": "風船の中心",
+        "focus": [
+          "users",
+          "tracks",
+          "balloons"
+        ],
+        "note": "1人の飛行中の風船は同時に1個まで。"
+      },
+      {
+        "id": "actions",
+        "label": "ユーザーの操作",
+        "focus": [
+          "balloons",
+          "plays",
+          "pops",
+          "favorites"
+        ],
+        "note": "回数、割る、回収はそれぞれ別のテーブルで持つ。"
+      },
+      {
+        "id": "ending",
+        "label": "旅の終わり",
+        "focus": [
+          "balloons",
+          "journeys"
+        ],
+        "note": "回収でも海や国外でも記録カードを1枚作る。"
+      }
+    ],
+    "output": "diagrams/erd-data-model-20261102-100000/data-model.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 72,
+    "gapY": 44
+  },
+  "entities": [
+    {
+      "id": "users",
+      "label": "users",
+      "tag": "利用者",
+      "row": 0,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "key": "uk"
+        },
+        {
+          "name": "password_digest",
+          "type": "text"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "auth_tokens",
+      "label": "auth_tokens",
+      "tag": "認証",
+      "row": 3,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "users.id"
+        },
+        {
+          "name": "token_digest",
+          "type": "text",
+          "key": "uk"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "tracks",
+      "label": "tracks",
+      "tag": "曲",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "title",
+          "type": "text"
+        },
+        {
+          "name": "artist",
+          "type": "text"
+        },
+        {
+          "name": "mp3_url",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": "balloons",
+      "label": "balloons",
+      "tag": "風船",
+      "row": 0,
+      "col": 1,
+      "width": 250,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "owner_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "users.id"
+        },
+        {
+          "name": "track_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "tracks.id"
+        },
+        {
+          "name": "status",
+          "type": "text"
+        },
+        {
+          "name": "origin_label",
+          "type": "text"
+        },
+        {
+          "name": "origin_lat",
+          "type": "double"
+        },
+        {
+          "name": "origin_lng",
+          "type": "double"
+        },
+        {
+          "name": "lat",
+          "type": "double"
+        },
+        {
+          "name": "lng",
+          "type": "double"
+        },
+        {
+          "name": "speed_east",
+          "type": "double"
+        },
+        {
+          "name": "speed_north",
+          "type": "double"
+        },
+        {
+          "name": "play_count",
+          "type": "int"
+        },
+        {
+          "name": "launched_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "ended_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "plays",
+      "label": "plays",
+      "tag": "操作",
+      "row": 0,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "balloon_id",
+          "type": "uuid",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "balloons.id"
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "users.id"
+        },
+        {
+          "name": "played_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "pops",
+      "label": "pops",
+      "tag": "操作",
+      "row": 1,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "balloon_id",
+          "type": "uuid",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "balloons.id"
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "users.id"
+        },
+        {
+          "name": "popped_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "favorites",
+      "label": "favorites",
+      "tag": "操作",
+      "row": 2,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "users.id"
+        },
+        {
+          "name": "balloon_id",
+          "type": "uuid",
+          "key": [
+            "uk",
+            "fk"
+          ],
+          "references": "balloons.id"
+        },
+        {
+          "name": "collected_on",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "id": "journeys",
+      "label": "journeys",
+      "tag": "記録",
+      "row": 1,
+      "col": 1,
+      "width": 250,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "balloon_id",
+          "type": "uuid",
+          "key": [
+            "uk",
+            "fk"
+          ],
+          "references": "balloons.id"
+        },
+        {
+          "name": "end_reason",
+          "type": "text"
+        },
+        {
+          "name": "end_label",
+          "type": "text"
+        },
+        {
+          "name": "end_lat",
+          "type": "double"
+        },
+        {
+          "name": "end_lng",
+          "type": "double"
+        },
+        {
+          "name": "duration_seconds",
+          "type": "int"
+        },
+        {
+          "name": "play_count",
+          "type": "int"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "wind_grid",
+      "label": "wind_grid",
+      "tag": "風",
+      "row": 2,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "lat",
+          "type": "double",
+          "key": "pk"
+        },
+        {
+          "name": "lng",
+          "type": "double",
+          "key": "pk"
+        },
+        {
+          "name": "valid_time",
+          "type": "timestamptz",
+          "key": "pk"
+        },
+        {
+          "name": "speed_east",
+          "type": "double"
+        },
+        {
+          "name": "speed_north",
+          "type": "double"
+        },
+        {
+          "name": "fetched_at",
+          "type": "timestamptz"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "balloon-owner",
+      "from": "balloons",
+      "to": "users",
+      "label": "飛ばす",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "balloon-track",
+      "from": "balloons",
+      "to": "tracks",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "play-balloon",
+      "from": "plays",
+      "to": "balloons",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "pop-balloon",
+      "from": "pops",
+      "to": "balloons",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "favorite-balloon",
+      "from": "favorites",
+      "to": "balloons",
+      "fromCardinality": "one",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "journey-balloon",
+      "from": "journeys",
+      "to": "balloons",
+      "fromCardinality": "one",
+      "fromOptional": true,
+      "toCardinality": "one"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "一意性で守るルール",
+      "items": [
+        "favorites の user_id と collected_on の組は一意にして、1日1回を守る",
+        "先着は status を条件にした更新で決める",
+        "owner_id ごとに飛行中は1個という部分一意を付ける",
+        "status の値は flying、collected、lost"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "plays と pops",
+      "items": [
+        "plays の複合主キーで同じ人の二重加算を防ぐ",
+        "play_count はSQLの増分で更新する",
+        "pops の行があれば、その人には流さない"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "図の省略",
+      "items": [
+        "plays、pops、favorites、auth_tokens から users への線は省略している",
+        "wind_grid は他のテーブルと結合しない"
+      ]
+    }
+  ]
+}

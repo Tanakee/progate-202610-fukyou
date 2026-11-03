@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "風船を飛ばす",
+    "subtitle": "1人同時に1個。出発地点だけがBEへ届く",
+    "animation": "trace",
+    "output": "diagrams/sequence-launch-balloon-20261102-100000/launch-balloon.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "ユーザー",
+      "sublabel": "iPhoneを操作"
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "FE: iOSアプリ",
+      "sublabel": "接続中の全端末を含む"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "BE: REST API",
+      "sublabel": "Rails API"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "データベース",
+      "sublabel": "PostgreSQL"
+    }
+  ],
+  "segments": [
+    {
+      "from": 158,
+      "to": 330,
+      "label": "曲を選ぶ"
+    },
+    {
+      "from": 352,
+      "to": 672,
+      "label": "登録"
+    },
+    {
+      "from": 694,
+      "to": 906,
+      "label": "すでに飛行中の場合"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "user",
+      "to": "app",
+      "y": 194,
+      "label": "飛ばすボタンを押す",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "app",
+      "to": "user",
+      "y": 234,
+      "label": "曲リストを表示",
+      "variant": "return",
+      "note": "起動時に取得した /tracks のキャッシュを使う"
+    },
+    {
+      "id": "m3",
+      "from": "user",
+      "to": "app",
+      "y": 308,
+      "label": "曲を選ぶ",
+      "variant": "default"
+    },
+    {
+      "id": "m5",
+      "from": "app",
+      "to": "api",
+      "y": 388,
+      "label": "POST /balloons",
+      "variant": "emphasis",
+      "note": "曲ID、ぼかした出発地点、地名を送る。生の現在地は送らない"
+    },
+    {
+      "id": "m6",
+      "from": "api",
+      "to": "db",
+      "y": 462,
+      "label": "飛行中でなければ風船を作成",
+      "variant": "security",
+      "note": "部分一意制約で1人1個を守る"
+    },
+    {
+      "id": "m7",
+      "from": "db",
+      "to": "api",
+      "y": 536,
+      "label": "balloon",
+      "variant": "return"
+    },
+    {
+      "id": "m8",
+      "from": "api",
+      "to": "app",
+      "y": 576,
+      "label": "201 balloon",
+      "variant": "return"
+    },
+    {
+      "id": "m9",
+      "from": "app",
+      "to": "user",
+      "y": 616,
+      "label": "ボタンが「🎈0回」に変わる",
+      "variant": "return",
+      "note": "他の端末には次の snapshot で届く"
+    },
+    {
+      "id": "m11",
+      "from": "app",
+      "to": "api",
+      "y": 730,
+      "label": "POST /balloons",
+      "variant": "default"
+    },
+    {
+      "id": "m12",
+      "from": "api",
+      "to": "db",
+      "y": 770,
+      "label": "風船を作成",
+      "variant": "default"
+    },
+    {
+      "id": "m13",
+      "from": "db",
+      "to": "api",
+      "y": 810,
+      "label": "一意制約違反",
+      "variant": "return"
+    },
+    {
+      "id": "m14",
+      "from": "api",
+      "to": "app",
+      "y": 850,
+      "label": "409 Conflict",
+      "variant": "return",
+      "note": "再送の場合に備え、GET /balloons/me で状態を読み直す"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "app",
+      "from": 189,
+      "to": 314,
+      "type": "frontend"
+    },
+    {
+      "participant": "app",
+      "from": 383,
+      "to": 622,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 383,
+      "to": 582,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 457,
+      "to": 542,
+      "type": "database"
+    },
+    {
+      "participant": "app",
+      "from": 725,
+      "to": 856,
+      "type": "frontend"
+    },
+    {
+      "participant": "api",
+      "from": 725,
+      "to": 856,
+      "type": "backend"
+    },
+    {
+      "participant": "db",
+      "from": 765,
+      "to": 816,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "制限",
+      "items": [
+        "同時に飛ばせるのは1人1個",
+        "飛行中なら409、範囲外の座標なら422を返す"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "位置情報",
+      "items": [
+        "端末が丸めとランダムなずらしをかける",
+        "BEは生の現在地を受け取らない"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "仮置き",
+      "items": [
+        "曲の選び方はアプリ内リストを仮置きしている"
+      ]
+    }
+  ]
+}
