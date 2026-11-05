@@ -6,3 +6,14 @@ docs/diagrams/**/*.finalize.json
 docs/diagrams/**/*.finalize-summary.json
 docs/diagrams/**/*.delivery.json
 docs/diagrams/**/*.browser-check.json
+
+# Rails の秘密鍵と実行時ファイル
+/backend/config/master.key
+/backend/config/credentials/*.key
+/backend/log/*
+!/backend/log/.keep
+/backend/tmp/*
+!/backend/tmp/.keep
+!/backend/tmp/pids/
+/backend/tmp/pids/*
+!/backend/tmp/pids/.keep
