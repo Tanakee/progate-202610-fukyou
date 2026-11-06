@@ -137,6 +137,8 @@ paths:
       operationId: logout
       summary: ログアウト
       description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
         `Authorization` ヘッダーで送った `token` を無効にします。
       responses:
         '204':
@@ -150,6 +152,8 @@ paths:
       operationId: getMe
       summary: ログイン中の利用者を返す
       description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
         `Authorization` ヘッダーの `token` から本人を特定して返します。パラメーターはありません。
       responses:
         '200':
@@ -168,7 +172,10 @@ paths:
       tags: [曲]
       operationId: createTrack
       summary: 曲をアップロードする
-      description: mp3を1曲アップロードします。上限は20MBです。
+      description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
+        mp3を1曲アップロードします。上限は20MBです。
       requestBody:
         required: true
         content:
@@ -234,7 +241,10 @@ paths:
       tags: [曲]
       operationId: listMyTracks
       summary: 自分がアップロードした曲の一覧を返す
-      description: 風船を飛ばすときの曲選びに使います。
+      description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
+        風船を飛ばすときの曲選びに使います。
       responses:
         '200':
           description: 取得に成功
@@ -255,6 +265,8 @@ paths:
       operationId: launchBalloon
       summary: 風船を飛ばす
       description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
         自分の曲を付けた風船を飛ばします。飛行中の風船は1人1個までです。
         現在地は送らず、端末でぼかした出発地点と地名だけを送ります。
       requestBody:
@@ -317,6 +329,8 @@ paths:
       operationId: listMyBalloons
       summary: 飛行中の自分の風船と回数を返す
       description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
         飛行中の風船は1人1個までなので、0件か1件の配列を返します。
         アプリは前面にある間、30秒ごとに呼んで回数を更新します。
       responses:
@@ -338,6 +352,8 @@ paths:
       operationId: playBalloon
       summary: 再生回数を加算する（1人1回）
       description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
         曲を5秒再生したら呼びます。同じ人が何度呼んでも、回数が増えるのは1回だけです。
         再送や、終了済みの風船への呼び出しも `200` を返し、回数は増やしません。
       parameters:
@@ -360,6 +376,8 @@ paths:
       operationId: collectBalloon
       summary: 回収する（1日1回）
       description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
         飛行中の他人の風船を回収し、お気に入りに入れます。回収できるのは1日1回で、日付は日本時間の0時で切り替わります。
         同時に回収しようとした場合は先着1人だけが成功します。
       parameters:
@@ -400,6 +418,8 @@ paths:
       operationId: popBalloon
       summary: 割る（自分の世界からだけ消す）
       description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
         自分の地図からだけ風船を消します。他の人には引き続き見えます。再送しても `200` を返します。
       parameters:
         - $ref: '#/components/parameters/BalloonId'
@@ -422,7 +442,10 @@ paths:
       tags: [マイページ]
       operationId: listMyPopped
       summary: 割った風船のID一覧を返す
-      description: アプリはこの一覧に入っている風船を地図に表示しません。
+      description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
+        アプリはこの一覧に入っている風船を地図に表示しません。
       responses:
         '200':
           description: 取得に成功
@@ -441,6 +464,8 @@ paths:
       tags: [マイページ]
       operationId: listMyFavorites
       summary: お気に入り（回収した風船）の一覧を返す
+      description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
       responses:
         '200':
           description: 取得に成功
@@ -458,7 +483,10 @@ paths:
       tags: [マイページ]
       operationId: listMyJourneys
       summary: 自分の風船の旅の記録カード一覧を返す
-      description: 回収されたときも、海や国外へ出たときも、記録カードが1枚できます。
+      description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
+        回収されたときも、海や国外へ出たときも、記録カードが1枚できます。
       responses:
         '200':
           description: 取得に成功
