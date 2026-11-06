@@ -1,7 +1,8 @@
 class CreateBalloons < ActiveRecord::Migration[8.1]
   def change
     create_table :balloons do |t|
-      t.references :owner, null: false, foreign_key: { to_table: :users }, index: false
+      # 飛ばした人。曲の持ち主（tracks.user_id）と同じ人になる
+      t.references :user, null: false, foreign_key: true
       t.references :track, null: false, foreign_key: true
       t.string :status, null: false, default: "flying"
       t.string :origin_label, null: false
@@ -18,12 +19,11 @@ class CreateBalloons < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :balloons, :owner_id
     # 飛行中の風船は1人1個まで
-    add_index :balloons, :owner_id, unique: true, where: "status = 'flying'",
-              name: "index_balloons_on_owner_id_flying"
-    # 地図の配信で飛行中の風船を引く
-    add_index :balloons, :status
+    add_index :balloons, :user_id, unique: true, where: "status = 'flying'",
+              name: "index_balloons_on_user_id_flying"
+    # 定期処理と地図の配信は、飛行中の風船だけを読む
+    add_index :balloons, :id, where: "status = 'flying'", name: "index_balloons_flying"
 
     add_check_constraint :balloons, "status IN ('flying', 'collected', 'lost')", name: "balloons_status_check"
     add_check_constraint :balloons, "play_count >= 0", name: "balloons_play_count_check"

@@ -24,7 +24,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_120009) do
   end
 
   create_table "balloons", force: :cascade do |t|
-    t.bigint "owner_id", null: false
+    t.bigint "user_id", null: false
     t.bigint "track_id", null: false
     t.string "status", default: "flying", null: false
     t.string "origin_label", null: false
@@ -39,10 +39,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_120009) do
     t.datetime "ended_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["owner_id"], name: "index_balloons_on_owner_id"
-    t.index ["owner_id"], name: "index_balloons_on_owner_id_flying", unique: true, where: "((status)::text = 'flying'::text)"
-    t.index ["status"], name: "index_balloons_on_status"
+    t.index ["id"], name: "index_balloons_flying", where: "((status)::text = 'flying'::text)"
     t.index ["track_id"], name: "index_balloons_on_track_id"
+    t.index ["user_id"], name: "index_balloons_on_user_id"
+    t.index ["user_id"], name: "index_balloons_on_user_id_flying", unique: true, where: "((status)::text = 'flying'::text)"
     t.check_constraint "play_count >= 0", name: "balloons_play_count_check"
     t.check_constraint "status::text = ANY (ARRAY['flying'::character varying, 'collected'::character varying, 'lost'::character varying]::text[])", name: "balloons_status_check"
   end
@@ -115,7 +115,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_120009) do
 
   add_foreign_key "auth_tokens", "users"
   add_foreign_key "balloons", "tracks"
-  add_foreign_key "balloons", "users", column: "owner_id"
+  add_foreign_key "balloons", "users"
   add_foreign_key "favorites", "balloons"
   add_foreign_key "favorites", "users"
   add_foreign_key "journeys", "balloons"

@@ -82,4 +82,4 @@ Action Cableで提供する、サーバーから端末への配信専用の接�
 }
 ```
 
-`balloons.snapshot` が地図の状態の正で、新しい風船も次の配信で届きます。`owner_id` は載せません。
+`balloons.snapshot` が地図の状態の正で、新しい風船も次の配信で届きます。飛ばした人（`user_id`）は載せません。

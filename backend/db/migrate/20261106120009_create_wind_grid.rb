@@ -1,6 +1,6 @@
 class CreateWindGrid < ActiveRecord::Migration[8.1]
   def change
-    # 他のテーブルとは結合しない
+    # 格子点と予報の有効時刻ごとに1行。他のテーブルと結合しないので、id も外部キーも持たない
     create_table :wind_grid, primary_key: [ :lat, :lng, :valid_time ] do |t|
       t.float :lat, null: false
       t.float :lng, null: false

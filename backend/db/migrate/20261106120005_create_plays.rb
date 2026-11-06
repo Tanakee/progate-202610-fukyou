@@ -1,13 +1,11 @@
 class CreatePlays < ActiveRecord::Migration[8.1]
   def change
-    # 複合主キーで同じ人の二重加算を防ぐ
+    # 複合主キーで、同じ人が同じ風船の回数を2回以上増やせないようにする
     create_table :plays, primary_key: [ :balloon_id, :user_id ] do |t|
-      t.bigint :balloon_id, null: false
-      t.bigint :user_id, null: false
+      # balloon_id は主キーの先頭の列なので、主キーの索引で検索できる
+      t.references :balloon, null: false, foreign_key: true, index: false
+      t.references :user, null: false, foreign_key: true
       t.datetime :played_at, null: false
     end
-    add_index :plays, :user_id
-    add_foreign_key :plays, :balloons
-    add_foreign_key :plays, :users
   end
 end

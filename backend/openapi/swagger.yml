@@ -13,7 +13,7 @@ info:
 
     ```
     GET /me
-    Authorization: Bearer 3q2+7wAbCdEf...
+    Authorization: Bearer q8Zr3mWJ5yH0VtKx...
     ```
 
     - サーバーはヘッダーの `token` をハッシュ化して保存済みの値と照合し、だれのリクエストかを特定します。
@@ -34,7 +34,7 @@ info:
     ## WebSocket `/ws`
 
     OpenAPIでは表現できないため、イベントの形式は `docs/api.md` に書いています。
-    接続は匿名で許可します。本人用チャンネルを使うときは、接続時にRESTと同じ `Authorization: Bearer <token>` ヘッダーを付けます。
+    接続は匿名で許可します。本人用チャンネルではトークンが必要です（渡し方は下の提案を参照）。
 
     ## レビュー待ちの提案
 
@@ -44,6 +44,8 @@ info:
     - ログイン失敗は `401`、メールの重複は `409`、入力不正は `422`、存在しないIDは `404`
     - エラーの `code` の具体的な値、文字数の上限、`end_reason` の値
     - 座標の対象範囲（資料で未指定のため、数値の制約は付けていない）
+    - `speed_east` / `speed_north` の単位（m/s など）
+    - WebSocket の本人用チャンネルも、RESTと同じ `Authorization: Bearer <token>` ヘッダーを付けて接続する
 
 servers:
   - url: http://localhost:3000
@@ -219,7 +221,7 @@ paths:
     get:
       tags: [曲]
       operationId: getTrack
-      summary: 曲情報を返す
+      summary: 曲名、アーティスト名、mp3のURLを返す
       description: |
         曲名、アーティスト名、mp3のURLを返します。地図上の風船の曲を流すために使うので、認証は不要です。
         アプリは初めて見る曲IDのときだけ呼び、結果をキャッシュします。
@@ -280,6 +282,7 @@ paths:
                 track_id:
                   type: integer
                   format: int64
+                  example: 7
                   description: 自分がアップロードした曲のID
                 origin_lat:
                   type: number
@@ -310,18 +313,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                code: forbidden_track
+                message: 自分の曲だけを飛ばせます
         '409':
           description: 飛行中の風船がすでにある。アプリは `/me/balloons` を読み直す
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                code: balloon_already_flying
+                message: 飛行中の風船があります
         '422':
           description: 出発地点が対象範囲の外にある
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                code: origin_out_of_range
+                message: この場所からは飛ばせません
 
   /me/balloons:
     get:
@@ -350,7 +362,7 @@ paths:
     post:
       tags: [風船]
       operationId: playBalloon
-      summary: 再生回数を加算する（1人1回）
+      summary: 5秒再生されたら回数を加算する（1人1回）
       description: |
         **認証**: `Authorization: Bearer <token>` ヘッダーが必要
 
@@ -397,6 +409,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                code: own_balloon
+                message: 自分の風船は回収できません
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -405,18 +420,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                code: balloon_not_flying
+                message: この風船はもう飛んでいません
         '429':
           description: 今日すでに回収している。1日の区切りは日本時間の0時
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                code: daily_limit_reached
+                message: 回収は1日1回までです
 
   /balloons/{id}/pop:
     post:
       tags: [風船]
       operationId: popBalloon
-      summary: 割る（自分の世界からだけ消す）
+      summary: 割る（自分の世界からのみ消す）
       description: |
         **認証**: `Authorization: Bearer <token>` ヘッダーが必要
 
@@ -456,6 +477,7 @@ paths:
                 items:
                   type: integer
                   format: int64
+                  example: 42
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -463,7 +485,7 @@ paths:
     get:
       tags: [マイページ]
       operationId: listMyFavorites
-      summary: お気に入り（回収した風船）の一覧を返す
+      summary: お気に入り一覧を返す
       description: |
         **認証**: `Authorization: Bearer <token>` ヘッダーが必要
       responses:
@@ -482,7 +504,7 @@ paths:
     get:
       tags: [マイページ]
       operationId: listMyJourneys
-      summary: 自分の風船の旅の記録カード一覧を返す
+      summary: 旅の記録カード一覧を返す
       description: |
         **認証**: `Authorization: Bearer <token>` ヘッダーが必要
 
@@ -517,6 +539,7 @@ components:
       schema:
         type: integer
         format: int64
+        example: 42
     TrackId:
       name: id
       in: path
@@ -525,6 +548,7 @@ components:
       schema:
         type: integer
         format: int64
+        example: 7
 
   responses:
     Unauthorized:
@@ -590,6 +614,7 @@ components:
         id:
           type: integer
           format: int64
+          example: 1
         email:
           type: string
           format: email
@@ -597,6 +622,7 @@ components:
         created_at:
           type: string
           format: date-time
+          example: '2026-11-06T09:00:00+09:00'
 
     AuthResult:
       type: object
@@ -605,7 +631,7 @@ components:
         token:
           type: string
           description: '以降のAPIで `Authorization: Bearer <token>` として送る値。JWTではない'
-          example: 3q2+7wAbCdEfGhIjKlMnOpQrStUvWxYz
+          example: q8Zr3mWJ5yH0VtKx2bNcL7aEo4sGdPfU-_9xQ2wE
         user:
           $ref: '#/components/schemas/User'
 
@@ -616,6 +642,7 @@ components:
         id:
           type: integer
           format: int64
+          example: 7
         title:
           type: string
           description: 曲名
@@ -628,6 +655,7 @@ components:
           type: string
           format: uri
           description: mp3を取得するURL
+          example: https://storage.example.com/tracks/7.mp3
 
     Balloon:
       type: object
@@ -649,9 +677,11 @@ components:
         id:
           type: integer
           format: int64
+          example: 42
         track_id:
           type: integer
           format: int64
+          example: 7
         status:
           type: string
           enum: [flying, collected, lost]
@@ -684,11 +714,11 @@ components:
         speed_east:
           type: number
           format: double
-          description: 東向きの速さ（西向きは負の値）
+          description: 東向きの速さ（西向きは負の値）。単位はレビューで確定する
         speed_north:
           type: number
           format: double
-          description: 北向きの速さ（南向きは負の値）
+          description: 北向きの速さ（南向きは負の値）。単位はレビューで確定する
         play_count:
           type: integer
           minimum: 0
@@ -697,6 +727,7 @@ components:
         launched_at:
           type: string
           format: date-time
+          example: '2026-11-06T09:00:00+09:00'
         ended_at:
           type: string
           format: date-time
@@ -710,9 +741,11 @@ components:
         id:
           type: integer
           format: int64
+          example: 3
         balloon_id:
           type: integer
           format: int64
+          example: 42
         collected_on:
           type: string
           format: date
@@ -737,9 +770,11 @@ components:
         id:
           type: integer
           format: int64
+          example: 5
         balloon_id:
           type: integer
           format: int64
+          example: 42
         end_reason:
           type: string
           description: 旅が終わった理由（回収、海、国外など）。値の一覧はレビューで確定する
@@ -750,9 +785,11 @@ components:
         end_lat:
           type: number
           format: double
+          example: 33.96
         end_lng:
           type: number
           format: double
+          example: 130.94
         duration_seconds:
           type: integer
           minimum: 0
@@ -766,6 +803,7 @@ components:
         created_at:
           type: string
           format: date-time
+          example: '2026-11-06T09:00:00+09:00'
 
     PlayResult:
       type: object
@@ -784,4 +822,5 @@ components:
         balloon_id:
           type: integer
           format: int64
+          example: 42
           description: 割った風船のID
