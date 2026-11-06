@@ -1,8 +1,8 @@
 class CreateBalloons < ActiveRecord::Migration[8.1]
   def change
-    create_table :balloons, id: :uuid do |t|
-      t.references :owner, null: false, type: :uuid, foreign_key: { to_table: :users }, index: false
-      t.references :track, null: false, foreign_key: true, type: :uuid
+    create_table :balloons do |t|
+      t.references :owner, null: false, foreign_key: { to_table: :users }, index: false
+      t.references :track, null: false, foreign_key: true
       t.string :status, null: false, default: "flying"
       t.string :origin_label, null: false
       t.float :origin_lat, null: false

@@ -266,8 +266,8 @@ paths:
               required: [track_id, origin_lat, origin_lng, origin_label]
               properties:
                 track_id:
-                  type: string
-                  format: uuid
+                  type: integer
+                  format: int64
                   description: 自分がアップロードした曲のID
                 origin_lat:
                   type: number
@@ -431,8 +431,8 @@ paths:
               schema:
                 type: array
                 items:
-                  type: string
-                  format: uuid
+                  type: integer
+                  format: int64
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -487,16 +487,16 @@ components:
       required: true
       description: 風船のID
       schema:
-        type: string
-        format: uuid
+        type: integer
+        format: int64
     TrackId:
       name: id
       in: path
       required: true
       description: 曲のID
       schema:
-        type: string
-        format: uuid
+        type: integer
+        format: int64
 
   responses:
     Unauthorized:
@@ -560,8 +560,8 @@ components:
       required: [id, email, created_at]
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         email:
           type: string
           format: email
@@ -586,8 +586,8 @@ components:
       required: [id, title, artist, mp3_url]
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         title:
           type: string
           description: 曲名
@@ -619,11 +619,11 @@ components:
         - ended_at
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         track_id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         status:
           type: string
           enum: [flying, collected, lost]
@@ -680,11 +680,11 @@ components:
       required: [id, balloon_id, collected_on, track]
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         balloon_id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         collected_on:
           type: string
           format: date
@@ -707,11 +707,11 @@ components:
         - created_at
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         balloon_id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
         end_reason:
           type: string
           description: 旅が終わった理由（回収、海、国外など）。値の一覧はレビューで確定する
@@ -754,6 +754,6 @@ components:
       required: [balloon_id]
       properties:
         balloon_id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
           description: 割った風船のID

@@ -1,7 +1,7 @@
 class CreateJourneys < ActiveRecord::Migration[8.1]
   def change
-    create_table :journeys, id: :uuid do |t|
-      t.references :balloon, null: false, foreign_key: true, type: :uuid, index: { unique: true }
+    create_table :journeys do |t|
+      t.references :balloon, null: false, foreign_key: true, index: { unique: true }
       t.string :end_reason, null: false
       t.string :end_label, null: false
       t.float :end_lat, null: false

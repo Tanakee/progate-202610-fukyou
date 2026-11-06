@@ -1,7 +1,7 @@
 class CreateAuthTokens < ActiveRecord::Migration[8.1]
   def change
-    create_table :auth_tokens, id: :uuid do |t|
-      t.references :user, null: false, foreign_key: true, type: :uuid
+    create_table :auth_tokens do |t|
+      t.references :user, null: false, foreign_key: true
       t.string :token_digest, null: false
 
       t.timestamps
