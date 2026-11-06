@@ -8,10 +8,14 @@ class CreateBalloons < ActiveRecord::Migration[8.1]
       t.string :origin_label, null: false
       t.float :origin_lat, null: false
       t.float :origin_lng, null: false
+      # lat / lng / speed_* / moved_at は、定期処理が5秒ごとに飛行中の行だけを更新する。
+      # 索引を付けると HOT 更新が効かなくなるので、これらの列には索引を付けない
       t.float :lat, null: false
       t.float :lng, null: false
       t.float :speed_east, null: false, default: 0
       t.float :speed_north, null: false, default: 0
+      # lat / lng を計算した日時。次の位置は、ここからの実際の経過時間で計算する
+      t.datetime :moved_at, null: false
       t.integer :play_count, null: false, default: 0
       t.datetime :launched_at, null: false
       t.datetime :ended_at

@@ -34,6 +34,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_120009) do
     t.float "lng", null: false
     t.float "speed_east", default: 0.0, null: false
     t.float "speed_north", default: 0.0, null: false
+    t.datetime "moved_at", null: false
     t.integer "play_count", default: 0, null: false
     t.datetime "launched_at", null: false
     t.datetime "ended_at"
