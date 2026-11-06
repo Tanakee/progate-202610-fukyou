@@ -75,6 +75,9 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    argon2 (2.3.3)
+      ffi (~> 1.15)
+      ffi-compiler (~> 1.0)
     ast (2.4.3)
     base64 (0.3.0)
     bcrypt_pbkdf (1.1.2)
@@ -107,6 +110,9 @@ GEM
     ffi (1.17.4-arm-linux-musl)
     ffi (1.17.4-x86_64-linux-gnu)
     ffi (1.17.4-x86_64-linux-musl)
+    ffi-compiler (1.4.3)
+      ffi (>= 1.15.5)
+      rake
     fugit (1.14.0)
       et-orbi (~> 1.4)
       raabro (~> 1.4)
@@ -341,6 +347,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  argon2 (~> 2.3)
   bootsnap
   brakeman
   bundler-audit
