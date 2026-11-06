@@ -1,0 +1,39 @@
+services:
+  app:
+    image: ruby:3.4
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - gems:/usr/local/bundle
+    environment:
+      DATABASE_URL: "postgresql://app:local_dev_password@db:5432/fukyou_development"
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - bash
+      - -c
+      - |
+        bundle install &&
+        ruby bin/rails db:prepare &&
+        exec ruby bin/rails server -b 0.0.0.0
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: local_dev_password
+      POSTGRES_DB: fukyou_development
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "app", "-d", "fukyou_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gems:
+  postgres_data:
