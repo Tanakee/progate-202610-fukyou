@@ -1,0 +1,6 @@
+// 無料アカウントではBundle IDがチームをまたいで重複できないため、
+// 自分のアカウントで入れるときは Local.xcconfig で上書きする
+PRODUCT_BUNDLE_IDENTIFIER = com.tanakee.oshikaze.backgroundspike
+
+// DEVELOPMENT_TEAM は人ごとに違うので Local.xcconfig に書く（コミットしない）
+#include? "Local.xcconfig"

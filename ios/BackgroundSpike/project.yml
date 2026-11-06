@@ -1,0 +1,32 @@
+name: BackgroundSpike
+options:
+  deploymentTarget:
+    iOS: "18.0"
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+targets:
+  BackgroundSpike:
+    type: application
+    platform: iOS
+    sources:
+      - BackgroundSpike
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: BackgroundSpike/Info.plist
+      properties:
+        CFBundleDisplayName: BG検証
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIBackgroundModes:
+          - audio
+        NSLocalNetworkUsageDescription: 手元のMacで動かす検証用サーバーに接続します
+        # 検証用サーバーへ ws:// で接続するため。本番のアプリでは外す
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
