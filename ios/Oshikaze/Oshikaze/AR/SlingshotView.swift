@@ -11,7 +11,9 @@ struct SlingshotView: View {
     @Environment(TrackStore.self) private var tracks
     @Environment(\.dismiss) private var dismiss
 
-    @State private var scene = SkyScene()
+    /// 画面を開いたときに1回だけ作る。地図は毎秒何度も描き直されるので、
+    /// ここで `= SkyScene()` と書くと、描き直しのたびに AR の部品を作っては捨ててしまう
+    @State private var scene: SkyScene?
     @State private var pull = CGSize.zero
     @State private var aimedTitle: String?
     @State private var message: String?
@@ -23,8 +25,10 @@ struct SlingshotView: View {
     var body: some View {
         ZStack {
             if SkyScene.isSupported {
-                SkyContainer(scene: scene)
-                    .ignoresSafeArea()
+                if let scene {
+                    SkyContainer(scene: scene)
+                        .ignoresSafeArea()
+                }
                 crosshair
                 VStack {
                     header
@@ -46,7 +50,7 @@ struct SlingshotView: View {
             }
         }
         .task { await run() }
-        .onDisappear { scene.stop() }
+        .onDisappear { scene?.stop() }
     }
 
     private var header: some View {
@@ -117,7 +121,7 @@ struct SlingshotView: View {
                     pull = Self.limited(value.translation)
                 }
                 .onEnded { _ in
-                    scene.fire(pull: pull)
+                    scene?.fire(pull: pull)
                     if hypot(pull.width, pull.height) > 20 {
                         sounds.play(.shot)
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -141,17 +145,19 @@ struct SlingshotView: View {
 
     private func run() async {
         guard SkyScene.isSupported else { return }
+        let scene = SkyScene()
         scene.onHit = { id in Task { await hit(id) } }
         scene.onAim = { id in Task { await aim(at: id) } }
         scene.start()
+        self.scene = scene
         // 風船は動き続けるので、2秒ごとに浮かべる風船と方角を更新する
         while !Task.isCancelled {
-            refreshTargets()
+            refreshTargets(in: scene)
             try? await Task.sleep(for: .seconds(2))
         }
     }
 
-    private func refreshTargets() {
+    private func refreshTargets(in scene: SkyScene) {
         guard let here = session.location.coordinate else { return }
         let ownID = myBalloon.balloon?.id
         let targets = session.visibleBalloons

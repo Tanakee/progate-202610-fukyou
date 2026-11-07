@@ -22,7 +22,8 @@ struct SkyTarget: Equatable {
 /// 弾の軌道と当たり判定は、調整しやすいよう物理エンジンを使わずに毎フレーム計算する
 @MainActor
 final class SkyScene {
-    let arView = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
+    /// 使うときに初めて作る。ARView は GPU の資源を多く確保するので、作り捨てると描画できなくなる
+    private(set) lazy var arView = ARView(frame: .zero, cameraMode: .ar, automaticallyConfigureSession: false)
 
     /// 当たった風船のID
     var onHit: ((Int) -> Void)?
