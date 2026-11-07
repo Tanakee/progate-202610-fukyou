@@ -31,12 +31,12 @@ class BalloonTest < ActiveSupport::TestCase
     end
   end
 
-  test "風データがまだなければ、初期値の風で動かす" do
+  test "風データがなければ、その場にとどまる" do
     balloon = balloons(:flying)
 
     Balloon.move_flying!(wind: {}, speed_scale: 1, now: balloon.moved_at + 100.seconds)
 
-    assert_equal WindGrid.default_velocity, [ balloon.reload.speed_east, balloon.speed_north ]
+    assert_equal [ 33.5, 130.5 ], [ balloon.reload.lat, balloon.lng ]
   end
 
   test "日本の排他的経済水域の外へ出た風船は割れる" do

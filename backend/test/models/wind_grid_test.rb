@@ -21,10 +21,31 @@ class WindGridTest < ActiveSupport::TestCase
     assert_equal 0, WindGrid.count
   end
 
-  test "1時間より前の予報は消す" do
+  test "取得した地点の、1時間より前の予報は消す" do
     import_forecast(speed: 10, direction: 270, valid_time: 2.hours.ago)
 
     assert_equal 0, WindGrid.count
+  end
+
+  test "取得していない地点の古い予報は残す" do
+    store_points([ [ 20, 122 ] ], fetched_at: 1.day.ago, valid_time: 1.day.ago)
+
+    import_forecast(speed: 10, direction: 270)
+
+    assert WindGrid.exists?(lat: 20, lng: 122)
+  end
+
+  test "地点ごとに、その時刻以前で最新の予報を使う" do
+    store_points([ [ 20, 122 ] ], fetched_at: 1.day.ago, valid_time: 1.day.ago)
+    import_forecast(speed: 10, direction: 270)
+
+    assert_equal [ [ 20, 122 ], [ 35, 140 ] ], WindGrid.at(Time.current).keys.sort
+  end
+
+  test "初期データで、全ての格子点に風が入る" do
+    Rails.application.load_seed
+
+    assert_equal WindGrid::POINTS.sort, WindGrid.at(Time.current).keys.sort
   end
 
   test "その時刻に有効な、最新の予報を返す" do
@@ -75,18 +96,10 @@ class WindGridTest < ActiveSupport::TestCase
     assert_equal [ 2.0, 2.0 ], WindGrid.velocity(wind, 35.5, 140.25)
   end
 
-  test "まだ風を取得していない格子点では、初期値の風を使う" do
+  test "風のない格子点は無風として扱う" do
     wind = { [ 35, 140 ] => [ 4.0, 4.0 ] }
-    default_east, default_north = WindGrid.default_velocity
 
-    east, north = WindGrid.velocity(wind, 35.5, 140.5)
-
-    assert_in_delta 1.0 + 0.75 * default_east, east, 0.000001
-    assert_in_delta 1.0 + 0.75 * default_north, north, 0.000001
-  end
-
-  test "初期値の風は、吹いてくる向きと速さから求める" do
-    assert_equal [ 5.0, 0.0 ], WindGrid.to_velocity(speed: 5, direction: 270).map { _1.round(6) }
+    assert_equal [ 1.0, 1.0 ], WindGrid.velocity(wind, 35.5, 140.5)
   end
 
   test "格子の外では、いちばん近い端の風を使う" do

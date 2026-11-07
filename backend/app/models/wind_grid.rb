@@ -55,24 +55,20 @@ class WindGrid < ApplicationRecord
       end
     end
     upsert_all(rows) if rows.any?
-    where(valid_time: ...1.hour.ago).delete_all
+    # 全地点の古い予報を消すと、まだ取得していない地点の初期データまで消えるので、取得した地点の分だけ消す
+    where([ :lat, :lng ] => points, valid_time: ...1.hour.ago).delete_all
   end
 
+  # 有効時刻を全地点で1つに決めると、実際の予報と初期データが混ざったときに初期データの地点が抜けるので、地点ごとに選ぶ
   def self.at(time)
-    valid_time = where(valid_time: ..time).maximum(:valid_time)
-    where(valid_time:).pluck(:lat, :lng, :speed_east, :speed_north).to_h do |lat, lng, east, north|
-      [ [ lat.to_i, lng.to_i ], [ east, north ] ]
-    end
+    where(valid_time: ..time).select("DISTINCT ON (lat, lng) lat, lng, speed_east, speed_north").order(:lat, :lng, valid_time: :desc)
+      .to_h { |wind| [ [ wind.lat.to_i, wind.lng.to_i ], [ wind.speed_east, wind.speed_north ] ] }
   end
 
   # 風向は風が吹いてくる向きなので、風船が進む向きはその逆になる
   def self.to_velocity(speed:, direction:)
     radians = direction * Math::PI / 180
     [ -speed * Math.sin(radians), -speed * Math.cos(radians) ]
-  end
-
-  def self.default_velocity
-    to_velocity(**Rails.configuration.x.default_wind)
   end
 
   def self.velocity(wind, lat, lng)
@@ -85,8 +81,8 @@ class WindGrid < ApplicationRecord
 
     [ [ lat0, lng0, (1 - t) * (1 - u) ], [ lat0 + 1, lng0, t * (1 - u) ], [ lat0, lng0 + 1, (1 - t) * u ], [ lat0 + 1, lng0 + 1, t * u ] ]
       .reduce([ 0.0, 0.0 ]) do |(east, north), (corner_lat, corner_lng, weight)|
-        # まだ風を取得していない格子点で無風にすると、起動直後に風船が止まって見えるので、初期値の風を使う
-        corner_east, corner_north = wind.fetch([ corner_lat, corner_lng ]) { default_velocity }
+        # 初期データ（db/seeds）を入れていない DB でも止めないよう、風のない格子点は無風として扱う
+        corner_east, corner_north = wind.fetch([ corner_lat, corner_lng ], [ 0.0, 0.0 ])
         [ east + weight * corner_east, north + weight * corner_north ]
       end
   end

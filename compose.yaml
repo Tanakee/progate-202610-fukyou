@@ -10,7 +10,6 @@ x-rails: &rails
     DB_PASSWORD: local_dev_password
     REDIS_URL: redis://redis:6379/1
     SPEED_SCALE: "1"
-    DEFAULT_WIND: "270,5"
 
 services:
   app:
