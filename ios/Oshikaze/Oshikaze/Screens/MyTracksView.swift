@@ -101,7 +101,7 @@ struct AccountSheet: View {
         NavigationStack {
             Group {
                 if auth.isSignedIn {
-                    MyTracksView()
+                    MyPageView()
                 } else {
                     LoginView()
                 }

@@ -85,7 +85,7 @@ struct MainView: View {
                     .padding(8)
                     .background(.regularMaterial, in: Circle())
             }
-            .accessibilityLabel("自分の曲")
+            .accessibilityLabel("マイページ")
             .padding(.leading)
         }
         .sheet(isPresented: $showsAccount) {
