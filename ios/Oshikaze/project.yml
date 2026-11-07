@@ -27,6 +27,7 @@ targets:
         UIBackgroundModes:
           - audio
         NSLocationWhenInUseUsageDescription: 近くを漂う風船の曲を流すために、現在地を使います。現在地はサーバーへ送りません
+        NSCameraUsageDescription: 空を見上げて、浮かんでいる風船をパチンコで割るために、カメラを使います
         NSLocalNetworkUsageDescription: 手元のMacで動かしているサーバーに接続します
         # 手元のBEへ http / ws で接続するため。本番のBEがhttpsになったら外す
         NSAppTransportSecurity:

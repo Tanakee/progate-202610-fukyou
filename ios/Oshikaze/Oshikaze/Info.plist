@@ -27,6 +27,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>空を見上げて、浮かんでいる風船をパチンコで割るために、カメラを使います</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>手元のMacで動かしているサーバーに接続します</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
