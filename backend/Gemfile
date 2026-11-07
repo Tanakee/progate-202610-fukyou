@@ -12,6 +12,9 @@ gem "jbuilder"
 # Hash passwords with Argon2id (has_secure_password / bcrypt is not used)
 gem "argon2", "~> 2.3"
 
+# Action Cable の配信。定期処理のコンテナから Web につないだ端末へ届ける
+gem "redis", "~> 5.4"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

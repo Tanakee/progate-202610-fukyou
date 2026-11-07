@@ -43,7 +43,6 @@ info:
     - 存在しないIDは `404`
     - 認証以外のエラーの `code` の具体的な値、曲名などの文字数の上限、`end_reason` の値
     - 座標の対象範囲（資料で未指定のため、数値の制約は付けていない）
-    - `speed_east` / `speed_north` の単位（m/s など）
     - WebSocket の本人用チャンネルも、RESTと同じ `Authorization: Bearer <token>` ヘッダーを付けて接続する
 
 servers:
@@ -726,11 +725,11 @@ components:
         speed_east:
           type: number
           format: double
-          description: 東向きの速さ（西向きは負の値）。単位はレビューで確定する
+          description: 東向きの風の速さ（m/s。西向きは負の値）
         speed_north:
           type: number
           format: double
-          description: 北向きの速さ（南向きは負の値）。単位はレビューで確定する
+          description: 北向きの風の速さ（m/s。南向きは負の値）
         play_count:
           type: integer
           minimum: 0
