@@ -4,6 +4,8 @@ class BalloonTest < ActiveSupport::TestCase
   WEST_WIND = WindGrid::POINTS.to_h { [ _1, [ 10.0, 0.0 ] ] }
   TOKYO = SeaRoutes::PORTS.index { _1["name"] == "東京" }
   NIIGATA = SeaRoutes::PORTS.index { _1["name"] == "新潟" }
+  HAKATA = SeaRoutes::PORTS.index { _1["name"] == "博多" }
+  MEINOHAMA = SeaRoutes::PORTS.index { _1["name"] == "姪浜" }
 
   test "飛行中の風船を、前回からの経過時間だけ風で進める" do
     balloon = balloons(:flying)
@@ -100,7 +102,7 @@ class BalloonTest < ActiveSupport::TestCase
 
   test "飛ばした場所から10km以内の港では、船に乗らない" do
     balloon = balloons(:flying)
-    balloon.update!(origin_lat: port(TOKYO)["lat"] + 0.045, origin_lng: port(TOKYO)["lng"], lat: port(TOKYO)["lat"], lng: port(TOKYO)["lng"])
+    balloon.update!(origin_lat: port(NIIGATA)["lat"] + 0.045, origin_lng: port(NIIGATA)["lng"], lat: port(NIIGATA)["lat"], lng: port(NIIGATA)["lng"])
 
     Balloon.move_flying!(wind: {}, speed_scale: 1, now: balloon.moved_at + 5.seconds)
 
@@ -144,6 +146,15 @@ class BalloonTest < ActiveSupport::TestCase
   test "降りた港では、すぐに船に乗り直さない" do
     balloon = balloons(:flying)
     balloon.update!(lat: port(NIIGATA)["lat"], lng: port(NIIGATA)["lng"], last_port: NIIGATA)
+
+    Balloon.move_flying!(wind: {}, speed_scale: 1, now: balloon.moved_at + 5.seconds)
+
+    assert_nil balloon.reload.bound_for
+  end
+
+  test "降りた港から10km以内のほかの港でも、すぐに船に乗り直さない" do
+    balloon = balloons(:flying)
+    balloon.update!(lat: port(MEINOHAMA)["lat"], lng: port(MEINOHAMA)["lng"], last_port: HAKATA)
 
     Balloon.move_flying!(wind: {}, speed_scale: 1, now: balloon.moved_at + 5.seconds)
 

@@ -13,10 +13,12 @@ class SeaRoutes
   VOYAGE = 1.minute
 
   # 動いた後の点ではなく、5秒で動いた線分で判定するのは、風が速いと港を飛び越してしまうから。
-  # 飛ばした場所の近くの港で乗らないのは、港町から飛ばした風船が、飛んですぐ遠くの港へ運ばれてしまうから
+  # 飛ばした場所の近くの港で乗らないのは、港町から飛ばした風船が、飛んですぐ遠くの港へ運ばれてしまうから。
+  # 降りた港だけでなくその近くの港も除くのは、港の並ぶ所で隣の港からすぐ乗り直し、風で漂わなくなるから
   def self.port_near(from, to, origin:, except: nil)
-    PORTS.each_index.excluding(except)
-      .reject { meters_between(POINTS[_1], origin) <= ARRIVAL_METERS }
+    ignored = [ origin, (POINTS[except] if except) ].compact
+    PORTS.each_index
+      .reject { |port| ignored.any? { meters_between(POINTS[port], _1) <= ARRIVAL_METERS } }
       .map { |port| [ port, distance_to_segment(POINTS[port], from, to) ] }
       .select { |_, meters| meters <= ARRIVAL_METERS }
       .min_by { |_, meters| meters }&.first
@@ -26,7 +28,6 @@ class SeaRoutes
     (JAPAN_SEA.include?(port) ? PACIFIC : JAPAN_SEA).sample(random:)
   end
 
-  # 港から港へ、海の上の道を VOYAGE で進んだときの、位置と東・北向きの速さ（m/s）
   def self.at(from, to, fraction)
     segments = path(from, to).each_cons(2).map { |a, b| [ a, b, meters_between(a, b) ] }
     total = segments.sum(&:last)
@@ -43,12 +44,20 @@ class SeaRoutes
     [ a[0] + (b[0] - a[0]) * ratio, a[1] + (b[1] - a[1]) * ratio, speed * east / length, speed * north / length ]
   end
 
-  # 点は数百しかないので、優先度つきキューを使わず、毎回いちばん近い点を探す
+  # 乗ったときに求めた道を風船に持たせないのは、出た港と行き先の港が同じなら道も同じで、組ごとに覚えれば足りるから
   def self.path(from, to)
+    (@paths ||= {})[[ from, to ]] ||= shortest_path(from, to)
+  end
+
+  # 点は数百しかないので、優先度つきキューを使わず、毎回いちばん近い点を探す
+  def self.shortest_path(from, to)
     meters = { from => 0.0 }
     previous = {}
     open = [ from ]
-    until (point = open.min_by { meters[_1] }) == to
+    loop do
+      point = open.min_by { meters[_1] } or raise ArgumentError, "港 #{from} から #{to} へ海の上の道がない"
+      break if point == to
+
       open.delete(point)
       LINKS[point].each do |link|
         through = meters[point] + meters_between(POINTS[point], POINTS[link])
@@ -80,5 +89,5 @@ class SeaRoutes
       (lng2 - lng1) * Balloon::METERS_PER_DEGREE * Math.cos(lat1 * Math::PI / 180) ]
   end
 
-  private_class_method :path, :distance_to_segment, :meters_between, :offset_meters
+  private_class_method :path, :shortest_path, :distance_to_segment, :meters_between, :offset_meters
 end
