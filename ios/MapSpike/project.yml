@@ -1,0 +1,26 @@
+name: MapSpike
+options:
+  deploymentTarget:
+    iOS: "18.0"
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+targets:
+  MapSpike:
+    type: application
+    platform: iOS
+    sources:
+      - MapSpike
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: MapSpike/Info.plist
+      properties:
+        CFBundleDisplayName: 地図検証
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
