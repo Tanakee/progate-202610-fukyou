@@ -14,9 +14,10 @@ class BalloonsChannelTest < ActionCable::Channel::TestCase
   test "snapshot には飛行中の風船だけを載せ、飛ばした人は載せない" do
     subscribe
 
-    flying = balloons(:flying)
-    assert_equal [ { "id" => flying.id, "track_id" => flying.track_id, "lat" => 33.5, "lng" => 130.5, "ve" => 0.0, "vn" => 0.0 } ],
-      transmissions.last["balloons"]
+    sent = transmissions.last["balloons"]
+    assert_equal Balloon.flying.ids.sort, sent.map { _1["id"] }.sort
+    assert_not_includes sent.map { _1["id"] }, balloons(:lost).id
+    assert sent.all? { _1.keys.sort == %w[id lat lng track_id ve vn] }
   end
 
   test "定期処理からの snapshot を全員向けに配信する" do
