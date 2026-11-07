@@ -1,3 +1,7 @@
 alice:
   email: alice@example.com
   password_digest: <%= Argon2::Password.create("password123") %>
+
+bob:
+  email: bob@example.com
+  password_digest: <%= Argon2::Password.create("password123") %>

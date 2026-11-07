@@ -15,6 +15,21 @@ Rails.application.routes.draw do
       get :tracks, to: "tracks#mine"
     end
 
+    namespace :me do
+      resources :balloons, only: :index
+      resources :pops, only: :index, path: "popped"
+      resources :favorites, only: :index
+      resources :journeys, only: :index
+    end
+
     resources :tracks, only: [:create, :show]
+
+    resources :balloons, only: :create do
+      scope module: :balloons do
+        resources :plays, only: :create
+        resource :collection, only: :create, path: "collect"
+        resource :pop, only: :create
+      end
+    end
   end
 end

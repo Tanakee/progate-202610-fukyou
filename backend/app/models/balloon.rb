@@ -3,8 +3,34 @@ class Balloon < ApplicationRecord
 
   belongs_to :user
   belongs_to :track
+  has_one :journey
+
+  class NotFlying < StandardError; end
 
   scope :flying, -> { where(status: "flying") }
+
+  validates :origin_label, presence: true
+  validates :origin_lat, :origin_lng, numericality: true
+  # 緯度・経度の範囲で決めないのは、範囲の中でも排他的経済水域の外なら、次の定期処理ですぐ割れてしまうから
+  validate do
+    errors.add(:origin, :out_of_range) unless errors.any? || JapanEez.cover?(origin_lat, origin_lng)
+  end
+
+  before_validation on: :create do
+    self.lat = origin_lat
+    self.lng = origin_lng
+    self.launched_at = self.moved_at = Time.current
+  end
+
+  def collect_by!(user)
+    transaction do
+      # 先に flying か読んで確かめないのは、読んでから更新するまでに他の人が回収すると、二人とも成功してしまうから
+      raise NotFlying unless Balloon.flying.where(id:).update_all(status: "collected", ended_at: Time.current) == 1
+
+      # 今日の回収済みを先に exists? で確かめないのは、同じ人が同時に回収すると両方通してしまうから。一意制約に任せる
+      user.favorites.create!(balloon: self, collected_on: Date.current)
+    end
+  end
 
   def self.move_flying!(wind:, speed_scale:, now: Time.current)
     rows = flying.map do |balloon|
