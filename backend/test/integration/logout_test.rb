@@ -10,7 +10,7 @@ class LogoutTest < ActionDispatch::IntegrationTest
   end
 
   test "他の端末の token は残る" do
-    other_token = AuthToken.issue!(users(:alice))
+    other_token = users(:alice).auth_tokens.create!.token
 
     delete "/auth/session", headers: auth_header("alice-token")
 

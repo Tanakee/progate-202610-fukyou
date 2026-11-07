@@ -3,14 +3,14 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # API は JSON だけを返すので、Accept ヘッダーがなくても jbuilder のテンプレートを使う
+  # Accept ヘッダーのないリクエストでも html ではなく jbuilder のテンプレートを探させる
   defaults format: :json do
     namespace :auth do
-      post "signup", to: "signups#create"
-      post "login", to: "sessions#create"
-      delete "session", to: "sessions#destroy"
+      resource :signup, only: :create
+      post :login, to: "sessions#create"
+      resource :session, only: :destroy
     end
 
-    get "me", to: "me#show"
+    resource :me, only: :show, controller: :me
   end
 end

@@ -131,6 +131,15 @@ paths:
               example:
                 code: invalid_credentials
                 message: メールアドレスまたはパスワードが違います
+        '429':
+          description: 同じ接続元から3分間に10回を超えてログインを試みた
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: too_many_requests
+                message: しばらくしてからもう一度お試しください
 
   /auth/session:
     delete:

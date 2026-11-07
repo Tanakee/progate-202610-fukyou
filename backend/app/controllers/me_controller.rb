@@ -1,7 +1,5 @@
 class MeController < ApplicationController
-  # GET /me
   def show
-    @user = current_user
-    render "users/show"
+    @user = Current.user
   end
 end

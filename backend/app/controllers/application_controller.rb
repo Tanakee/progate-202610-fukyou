@@ -1,13 +1,11 @@
 class ApplicationController < ActionController::API
   include Authentication
 
-  # リクエストの JSON はキーをそのまま受け取る（コントローラー名のキーで包まない）
+  # アプリは平たい JSON を送る。モデル名のキーで包むと、permit のたびに不要なキーが混ざるので包まない
   wrap_parameters false
 
   private
-
-  # エラーは全て { code, message } の形で返す
-  def render_error(status, code:, message:)
-    render "errors/error", status: status, locals: { code: code, message: message }
-  end
+    def render_error(status, code:, message:)
+      render "errors/show", status: status, locals: { code: code, message: message }
+    end
 end

@@ -1,4 +1,4 @@
 # 平文の token は "alice-token"
 alice_token:
   user: alice
-  token_digest: <%= OpenSSL::Digest::SHA256.hexdigest("alice-token") %>
+  token_digest: <%= AuthToken.digest("alice-token") %>
