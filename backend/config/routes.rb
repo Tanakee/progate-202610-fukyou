@@ -16,7 +16,7 @@ Rails.application.routes.draw do
       resources :balloons, only: :index
     end
 
-    resources :balloons, only: [] do
+    resources :balloons, only: :create do
       scope module: :balloons do
         resources :plays, only: :create
         resource :collection, only: :create, path: "collect"

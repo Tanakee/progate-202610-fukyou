@@ -8,6 +8,19 @@ class Balloon < ApplicationRecord
 
   scope :flying, -> { where(status: "flying") }
 
+  validates :origin_label, presence: true
+  validates :origin_lat, :origin_lng, numericality: true
+  # 緯度・経度の範囲で決めないのは、範囲の中でも排他的経済水域の外なら、次の定期処理ですぐ割れてしまうから
+  validate do
+    errors.add(:origin, :out_of_range) unless errors.any? || JapanEez.cover?(origin_lat, origin_lng)
+  end
+
+  before_validation on: :create do
+    self.lat = origin_lat
+    self.lng = origin_lng
+    self.launched_at = self.moved_at = Time.current
+  end
+
   def collect_by!(user)
     transaction do
       # 先に flying か読んで確かめないのは、読んでから更新するまでに他の人が回収すると、二人とも成功してしまうから
