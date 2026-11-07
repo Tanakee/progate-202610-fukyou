@@ -40,9 +40,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_120000) do
     t.datetime "ended_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "sea_route"
-    t.datetime "boarded_at"
     t.integer "last_port"
+    t.integer "bound_for"
+    t.datetime "boarded_at"
     t.index ["id"], name: "index_balloons_flying", where: "((status)::text = 'flying'::text)"
     t.index ["track_id"], name: "index_balloons_on_track_id"
     t.index ["user_id"], name: "index_balloons_on_user_id"

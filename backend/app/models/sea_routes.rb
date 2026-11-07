@@ -1,30 +1,34 @@
 class SeaRoutes
   data = JSON.parse(Rails.root.join("config/sea_routes.json").read)
   PORTS = data.fetch("ports")
-  ROUTES = data.fetch("routes")
-  ROUTES_FROM = ROUTES.each_index.group_by { ROUTES[_1]["from"] }
+  POINTS = PORTS.map { [ _1["lat"], _1["lng"] ] } + data.fetch("waypoints")
+  LINKS = data.fetch("links").each_with_object(Hash.new { |links, point| links[point] = [] }) do |(a, b), links|
+    links[a] << b
+    links[b] << a
+  end
+  JAPAN_SEA, PACIFIC = PORTS.each_index.partition { PORTS[_1]["side"] == "japan_sea" }
 
   ARRIVAL_METERS = 10_000
-  # 距離に合わせた速さにしないのは、遠い航路ほど着くまで待たされ、船に乗った感じが薄れるから
+  # 距離に合わせた速さにしないのは、遠い港ほど着くまで待たされ、船に乗った感じが薄れるから
   VOYAGE = 1.minute
 
-  # 動いた後の点ではなく、5秒で動いた線分で判定するのは、風が速いと港を飛び越してしまうから
-  def self.port_near(from, to, except: nil)
-    ROUTES_FROM.keys.excluding(except)
-      .map { |port| [ port, distance_to_segment(PORTS[port], from, to) ] }
+  # 動いた後の点ではなく、5秒で動いた線分で判定するのは、風が速いと港を飛び越してしまうから。
+  # 飛ばした場所の近くの港で乗らないのは、港町から飛ばした風船が、飛んですぐ遠くの港へ運ばれてしまうから
+  def self.port_near(from, to, origin:, except: nil)
+    PORTS.each_index.excluding(except)
+      .reject { meters_between(POINTS[_1], origin) <= ARRIVAL_METERS }
+      .map { |port| [ port, distance_to_segment(POINTS[port], from, to) ] }
       .select { |_, meters| meters <= ARRIVAL_METERS }
       .min_by { |_, meters| meters }&.first
   end
 
   def self.pick(port, random: Random)
-    routes = ROUTES_FROM.fetch(port)
-    ticket = random.rand * routes.sum { ROUTES[_1]["per_week"] }
-    routes.find { (ticket -= ROUTES[_1]["per_week"]) < 0 } || routes.last
+    (JAPAN_SEA.include?(port) ? PACIFIC : JAPAN_SEA).sample(random:)
   end
 
-  # 航路の折れ線を VOYAGE で進んだときの、位置と東・北向きの速さ（m/s）
-  def self.at(route, fraction)
-    segments = ROUTES[route]["path"].map(&:reverse).each_cons(2).map { |a, b| [ a, b, meters_between(a, b) ] }
+  # 港から港へ、海の上の道を VOYAGE で進んだときの、位置と東・北向きの速さ（m/s）
+  def self.at(from, to, fraction)
+    segments = path(from, to).each_cons(2).map { |a, b| [ a, b, meters_between(a, b) ] }
     total = segments.sum(&:last)
     traveled = total * fraction.clamp(0, 1)
 
@@ -39,10 +43,28 @@ class SeaRoutes
     [ a[0] + (b[0] - a[0]) * ratio, a[1] + (b[1] - a[1]) * ratio, speed * east / length, speed * north / length ]
   end
 
-  def self.distance_to_segment(port, from, to)
-    origin = [ port["lat"], port["lng"] ]
-    ay, ax = offset_meters(origin, from)
-    by, bx = offset_meters(origin, to)
+  # 点は数百しかないので、優先度つきキューを使わず、毎回いちばん近い点を探す
+  def self.path(from, to)
+    meters = { from => 0.0 }
+    previous = {}
+    open = [ from ]
+    until (point = open.min_by { meters[_1] }) == to
+      open.delete(point)
+      LINKS[point].each do |link|
+        through = meters[point] + meters_between(POINTS[point], POINTS[link])
+        next if meters[link] && meters[link] <= through
+
+        open << link unless meters.key?(link)
+        meters[link] = through
+        previous[link] = point
+      end
+    end
+    [ to ].tap { |points| points.unshift(previous[points.first]) until points.first == from }.map { POINTS[_1] }
+  end
+
+  def self.distance_to_segment(point, from, to)
+    ay, ax = offset_meters(point, from)
+    by, bx = offset_meters(point, to)
     dx, dy = bx - ax, by - ay
     t = dx.zero? && dy.zero? ? 0 : (-(ax * dx + ay * dy) / (dx * dx + dy * dy)).clamp(0, 1)
     Math.hypot(ax + dx * t, ay + dy * t)
@@ -52,11 +74,11 @@ class SeaRoutes
     Math.hypot(*offset_meters(a, b))
   end
 
-  # 港の周り数十kmと1本の航路の中だけで使うので、地球の丸みは緯度ごとの経度の縮みだけで足りる
+  # 地球の丸みは緯度ごとの経度の縮みだけで足りる。中継点の間は長くても数百kmで、ずれは道の見た目にしか効かない
   def self.offset_meters((lat1, lng1), (lat2, lng2))
     [ (lat2 - lat1) * Balloon::METERS_PER_DEGREE,
       (lng2 - lng1) * Balloon::METERS_PER_DEGREE * Math.cos(lat1 * Math::PI / 180) ]
   end
 
-  private_class_method :distance_to_segment, :meters_between, :offset_meters
+  private_class_method :path, :distance_to_segment, :meters_between, :offset_meters
 end
