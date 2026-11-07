@@ -53,6 +53,12 @@ final class PlaybackController {
         }
     }
 
+    /// その曲が実際に鳴っているか。流すがOFFのときや、読み込み中は false
+    func isPlaying(_ track: Track) -> Bool {
+        guard isListening, let channel, channel.track == track else { return false }
+        return channel.player.timeControlStatus == .playing
+    }
+
     /// 流す曲を変える。nil を渡すと無音ループにする
     func play(_ track: Track?) {
         guard !hasDesired || track != desired else { return }

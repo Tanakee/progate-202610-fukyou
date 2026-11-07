@@ -4,19 +4,27 @@ import SwiftUI
 /// 3D地図の全画面と、下部の再生バー
 struct MainView: View {
     @Environment(ListeningSession.self) private var session
+    @Environment(AuthStore.self) private var auth
+    @Environment(MyBalloonStore.self) private var myBalloon
     @State private var position = MapCameraPosition.userLocation(
         fallback: .camera(MapCamera(centerCoordinate: .init(latitude: 36.5, longitude: 137.5), distance: 3_000_000))
     )
     @AppStorage("isListening") private var isListening = false
     @State private var hasCentered = false
     @State private var showsAccount = false
+    @State private var showsLaunch = false
+
+    /// 設計書の「前面にある間は30秒ごとに /me/balloons を読む」
+    private static let myBalloonRefreshInterval: Duration = .seconds(30)
 
     var body: some View {
         Map(position: $position) {
             UserAnnotation()
             ForEach(session.feed.balloons) { balloon in
                 Annotation("", coordinate: balloon.coordinate, anchor: .bottom) {
-                    BalloonMark(id: balloon.id, isPlaying: balloon.id == session.currentBalloonID)
+                    BalloonMark(id: balloon.id,
+                                isPlaying: balloon.id == session.currentBalloonID,
+                                isMine: balloon.id == myBalloon.balloon?.id)
                 }
             }
         }
@@ -27,8 +35,27 @@ struct MainView: View {
             MapPitchToggle()
         }
         .safeAreaInset(edge: .bottom) {
-            PlaybackBar(isListening: $isListening)
-                .padding(.horizontal)
+            VStack(alignment: .trailing, spacing: 12) {
+                LaunchButton(balloon: myBalloon.balloon) {
+                    if let balloon = myBalloon.balloon {
+                        showMyBalloon(balloon)
+                    } else {
+                        showsLaunch = true
+                    }
+                }
+                PlaybackBar(isListening: $isListening)
+            }
+            .padding(.horizontal)
+        }
+        .sheet(isPresented: $showsLaunch) {
+            LaunchSheet()
+        }
+        .task(id: auth.token) {
+            // ログインとログアウトのたびに読み直し、その後は30秒ごとに回数を更新する
+            while !Task.isCancelled {
+                await myBalloon.refresh(with: auth)
+                try? await Task.sleep(for: Self.myBalloonRefreshInterval)
+            }
         }
         .overlay(alignment: .topLeading) {
             Button {
@@ -68,11 +95,43 @@ struct MainView: View {
             isListening = listening
         }
     }
+
+    /// 自分の風船へ地図を寄せる。地図の主役は利用者なので、ボタンを押したときだけ寄せる。
+    /// 配信の位置があればそちらを使う（/me/balloons より新しい）
+    private func showMyBalloon(_ balloon: MyBalloon) {
+        let coordinate = session.feed.balloons.first { $0.id == balloon.id }?.coordinate ?? balloon.coordinate
+        withAnimation(.easeInOut(duration: 1.5)) {
+            position = .camera(MapCamera(centerCoordinate: coordinate, distance: 80_000, heading: 0, pitch: 55))
+        }
+    }
+}
+
+/// 飛ばすボタン。飛行中は「🎈 12回」のように聴かれた回数を出し、押すと自分の風船へ移動する
+private struct LaunchButton: View {
+    let balloon: MyBalloon?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label {
+                Text(balloon.map { "\($0.playCount)回" } ?? "飛ばす")
+                    .font(.headline)
+                    .monospacedDigit()
+            } icon: {
+                Text("🎈")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.regularMaterial, in: Capsule())
+        }
+        .accessibilityLabel(balloon.map { "自分の風船。\($0.playCount)回聴かれました" } ?? "風船を飛ばす")
+    }
 }
 
 private struct BalloonMark: View {
     let id: Int
     let isPlaying: Bool
+    let isMine: Bool
 
     private static let colors: [Color] = [.red, .orange, .yellow, .green, .mint, .teal, .cyan, .blue, .indigo, .purple, .pink]
 
@@ -81,7 +140,8 @@ private struct BalloonMark: View {
         VStack(spacing: 0) {
             Circle()
                 .fill(color.gradient)
-                .overlay(Circle().stroke(.white, lineWidth: isPlaying ? 3 : 1))
+                .overlay(Circle().stroke(isMine ? .yellow : .white, lineWidth: isPlaying || isMine ? 3 : 1))
+                .overlay { if isMine { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.white) } }
                 .frame(width: isPlaying ? 32 : 18, height: isPlaying ? 32 : 18)
                 .shadow(color: isPlaying ? color : .black.opacity(0.3), radius: isPlaying ? 8 : 2)
             Rectangle()
