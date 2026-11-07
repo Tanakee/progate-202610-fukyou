@@ -50,12 +50,8 @@ class WindGrid < ApplicationRecord
         direction = hourly.fetch("wind_direction_10m")[i]
         next if speed.nil? || direction.nil?
 
-        # 風向は風が吹いてくる向きなので、風船が進む向きはその逆になる
-        radians = direction * Math::PI / 180
-        {
-          lat:, lng:, valid_time: Time.find_zone("UTC").parse(hourly["time"][i]),
-          speed_east: -speed * Math.sin(radians), speed_north: -speed * Math.cos(radians), fetched_at:
-        }
+        east, north = to_velocity(speed:, direction:)
+        { lat:, lng:, valid_time: Time.find_zone("UTC").parse(hourly["time"][i]), speed_east: east, speed_north: north, fetched_at: }
       end
     end
     upsert_all(rows) if rows.any?
@@ -69,6 +65,16 @@ class WindGrid < ApplicationRecord
     end
   end
 
+  # 風向は風が吹いてくる向きなので、風船が進む向きはその逆になる
+  def self.to_velocity(speed:, direction:)
+    radians = direction * Math::PI / 180
+    [ -speed * Math.sin(radians), -speed * Math.cos(radians) ]
+  end
+
+  def self.default_velocity
+    to_velocity(**Rails.configuration.x.default_wind)
+  end
+
   def self.velocity(wind, lat, lng)
     lat = lat.clamp(LATITUDES.min, LATITUDES.max)
     lng = lng.clamp(LONGITUDES.min, LONGITUDES.max)
@@ -79,8 +85,8 @@ class WindGrid < ApplicationRecord
 
     [ [ lat0, lng0, (1 - t) * (1 - u) ], [ lat0 + 1, lng0, t * (1 - u) ], [ lat0, lng0 + 1, (1 - t) * u ], [ lat0 + 1, lng0 + 1, t * u ] ]
       .reduce([ 0.0, 0.0 ]) do |(east, north), (corner_lat, corner_lng, weight)|
-        # 一周目の取得の途中で、まだ風のない格子点は無風として扱う
-        corner_east, corner_north = wind.fetch([ corner_lat, corner_lng ], [ 0.0, 0.0 ])
+        # まだ風を取得していない格子点で無風にすると、起動直後に風船が止まって見えるので、初期値の風を使う
+        corner_east, corner_north = wind.fetch([ corner_lat, corner_lng ]) { default_velocity }
         [ east + weight * corner_east, north + weight * corner_north ]
       end
   end

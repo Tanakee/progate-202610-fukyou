@@ -75,10 +75,18 @@ class WindGridTest < ActiveSupport::TestCase
     assert_equal [ 2.0, 2.0 ], WindGrid.velocity(wind, 35.5, 140.25)
   end
 
-  test "まだ風を取得していない格子点は無風として扱う" do
+  test "まだ風を取得していない格子点では、初期値の風を使う" do
     wind = { [ 35, 140 ] => [ 4.0, 4.0 ] }
+    default_east, default_north = WindGrid.default_velocity
 
-    assert_equal [ 1.0, 1.0 ], WindGrid.velocity(wind, 35.5, 140.5)
+    east, north = WindGrid.velocity(wind, 35.5, 140.5)
+
+    assert_in_delta 1.0 + 0.75 * default_east, east, 0.000001
+    assert_in_delta 1.0 + 0.75 * default_north, north, 0.000001
+  end
+
+  test "初期値の風は、吹いてくる向きと速さから求める" do
+    assert_equal [ 5.0, 0.0 ], WindGrid.to_velocity(speed: 5, direction: 270).map { _1.round(6) }
   end
 
   test "格子の外では、いちばん近い端の風を使う" do

@@ -27,6 +27,9 @@ module Backend
 
     # デモの前に早送りするだけなので、設定用のテーブルは作らず環境変数で持つ
     config.x.speed_scale = ENV.fetch("SPEED_SCALE", "1").to_f
+    # 風データがまだない所で使う風。無風にしないのは、起動直後に風船が止まって見えるから。
+    # 書式は "吹いてくる向き(度),速さ(m/s)"。西風にするのは、日本の上空で最も多い向きだから
+    config.x.default_wind = ENV.fetch("DEFAULT_WIND", "270,5").split(",").map(&:to_f).then { |direction, speed| { direction:, speed: } }
 
     config.action_cable.mount_path = "/ws"
     # 接続元はブラウザではなく iOS アプリで、Origin ヘッダーが付かないため検査しない

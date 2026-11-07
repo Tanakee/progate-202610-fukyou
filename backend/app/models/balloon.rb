@@ -7,8 +7,6 @@ class Balloon < ApplicationRecord
   scope :flying, -> { where(status: "flying") }
 
   def self.move_flying!(wind:, speed_scale:, now: Time.current)
-    return if wind.empty?
-
     rows = flying.map do |balloon|
       east, north = WindGrid.velocity(wind, balloon.lat, balloon.lng)
       meters = speed_scale * (now - balloon.moved_at)

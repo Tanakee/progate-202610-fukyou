@@ -96,6 +96,7 @@ node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-mod
 
 - Open-Meteo の無料枠は地点の数で数え、1分に600、1時間に5,000、1日に10,000までです。20分ごとに100地点なら1日7,200で収まります
 - 速度の倍率は `compose.yaml` の `SPEED_SCALE` で変えられます（変えたら `docker compose up -d` で作り直す）
+- 風データがまだない所（起動直後や、まだ取得していない格子点）では、`compose.yaml` の `DEFAULT_WIND` の風を使います。書式は `"吹いてくる向き(度),速さ(m/s)"` で、初期値の `"270,5"` は西から 5 m/s の風です
 - どちらの定期処理も advisory lock で1プロセスだけが動きます。落ちたら compose が再起動します
 - ログはエラーだけが出ます（`docker compose logs -f wind balloons`）。SQL などの詳しいログは `backend/log/development.log` にあります
 
