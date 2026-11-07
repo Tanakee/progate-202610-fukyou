@@ -6,6 +6,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("serverURL") private var serverURL = "ws://192.168.0.10:8080"
     @State private var notificationStatus = "未確認"
+    @MainActor private static var didAutoStart = false
 
     var body: some View {
         NavigationStack {
@@ -17,7 +18,10 @@ struct ContentView: View {
             }
             .navigationTitle("BG検証")
         }
-        .task { await refreshNotificationStatus() }
+        .task {
+            await refreshNotificationStatus()
+            autoStartIfRequested()
+        }
         .onChange(of: scenePhase) { _, phase in
             model.log.add("画面の状態: \(Self.label(of: phase))")
         }
@@ -80,6 +84,24 @@ struct ContentView: View {
                 ShareLink(item: model.log.fileURL) { Image(systemName: "square.and.arrow.up") }
                 Button("消去") { model.log.clear() }
             }
+        }
+    }
+
+    /// 起動引数 `-autoURL ws://... -autoMode tracks|silence` があれば、ボタンを押さずに接続と再生を始める。
+    /// Macから devicectl で起動したとき、手作業をロックだけにするため
+    private func autoStartIfRequested() {
+        // 画面が表示し直されると .task が再び走るので、1プロセスで1回だけにする
+        guard !Self.didAutoStart else { return }
+        Self.didAutoStart = true
+        let defaults = UserDefaults.standard
+        guard let url = defaults.string(forKey: "autoURL") else { return }
+        serverURL = url
+        model.log.add("自動開始: \(url)")
+        model.socket.connect(to: url)
+        switch defaults.string(forKey: "autoMode") {
+        case "tracks": model.audio.playTracks()
+        case "silence": model.audio.playSilence()
+        default: break
         }
     }
 

@@ -27,6 +27,25 @@ node ios/BackgroundSpike/server/server.mjs
 
 サーバーは5秒ごとに連番を送り、30秒ごとに通知の合図を付けます。`n` を入力してEnterを押すと、すぐに合図を送ります。
 
+学校や会社のWi-Fiでは端末同士の通信が禁止されていることがあり、その場合はタイムアウトします。iPhoneのテザリングにMacをつなぐと確実です。テザリングがIPv6だけのネットワークになる場合は、`ifconfig en0` で出るIPv6アドレスを `ws://[240b:...]:8080` の形で使います。
+
+### Macから起動する
+
+iPhoneをUSBでつないでいれば、ボタンを押さずに接続と再生まで始められます。手作業はロックだけになります。`-autoMode` を省くと再生せずに接続だけします。
+
+```sh
+xcrun devicectl device process launch --device <デバイスID> com.tanakee.oshikaze.backgroundspike \
+  -- -autoURL ws://192.168.x.x:8080 -autoMode tracks   # tracks または silence
+```
+
+ログは次で取り出せます。
+
+```sh
+xcrun devicectl device copy from --device <デバイスID> --domain-type appDataContainer \
+  --domain-identifier com.tanakee.oshikaze.backgroundspike \
+  --source Documents/spike-log.txt --destination spike-log.txt
+```
+
 ### 確かめ方
 
 先にアプリで「通知を許可する」を押しておきます。ログは画面とファイルの両方に残るので、ロックを解除してから時刻と間隔を確認します。受信の間隔が7秒を超えると ⚠️ が付きます。
