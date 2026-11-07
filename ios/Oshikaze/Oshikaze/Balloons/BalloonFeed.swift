@@ -49,6 +49,8 @@ final class BalloonFeed {
     private static let silenceLimit: TimeInterval = 10
     private static let maxBackoff: TimeInterval = 30
     private static let frameInterval: Duration = .milliseconds(50)
+    /// 配信は5秒ごとなので、その2回分
+    private static let maxExtrapolation: TimeInterval = 10
 
     init(url: URL = AppConfig.webSocketURL) {
         self.url = url
@@ -196,9 +198,11 @@ final class BalloonFeed {
         }
     }
 
-    /// 最後の配信の位置から、経過時間 × 倍率だけ風で進める
+    /// 最後の配信の位置から、経過時間 × 倍率だけ風で進める。
+    /// 配信が途切れたまま進め続けると、BEでは割れた風船まで日本の外へ流れていくので、配信2回分で止める
     private func updatePositions() {
-        let seconds = Date.now.timeIntervalSince(anchoredAt) * speedScale
+        let elapsed = min(Date.now.timeIntervalSince(anchoredAt), Self.maxExtrapolation)
+        let seconds = elapsed * speedScale
         balloons = anchors.map { anchor in
             Balloon(id: anchor.id,
                     trackID: anchor.trackID,
