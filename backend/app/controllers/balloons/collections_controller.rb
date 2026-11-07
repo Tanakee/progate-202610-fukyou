@@ -3,7 +3,7 @@ module Balloons
     def create
       @balloon = Balloon.find(params[:balloon_id])
 
-      if @balloon.user == current_user
+      if @balloon.user_id == current_user.id
         render_error :forbidden, code: "own_balloon", message: "自分の風船は回収できません"
       else
         # 回収済みの本人の再送は、通信が切れて結果を受け取れなかった場合なので、成功として同じ結果を返す

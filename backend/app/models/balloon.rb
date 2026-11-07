@@ -4,16 +4,16 @@ class Balloon < ApplicationRecord
   belongs_to :user
   belongs_to :track
 
-  NotFlying = Class.new(StandardError)
+  class NotFlying < StandardError; end
 
   scope :flying, -> { where(status: "flying") }
 
   def collect_by!(user)
     transaction do
-      # 読んでから更新するまでの間に他の人が回収しても二重に成功しないよう、flying の行だけを更新して先着を決める
+      # 先に flying か読んで確かめないのは、読んでから更新するまでに他の人が回収すると、二人とも成功してしまうから
       raise NotFlying unless Balloon.flying.where(id:).update_all(status: "collected", ended_at: Time.current) == 1
 
-      # 今日すでに回収していれば (user_id, collected_on) の一意制約で失敗し、風船の更新ごと取り消される
+      # 今日の回収済みを先に exists? で確かめないのは、同じ人が同時に回収すると両方通してしまうから。一意制約に任せる
       user.favorites.create!(balloon: self, collected_on: Date.current)
     end
   end

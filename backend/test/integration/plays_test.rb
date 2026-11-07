@@ -22,6 +22,13 @@ class PlaysTest < ActionDispatch::IntegrationTest
     assert_equal 0, json["play_count"]
   end
 
+  test "token がなければ 401" do
+    post "/balloons/#{balloons(:bob_flying).id}/plays"
+
+    assert_response :unauthorized
+    assert_equal 3, balloons(:bob_flying).reload.play_count
+  end
+
   test "存在しない風船なら 404" do
     post "/balloons/0/plays", headers: auth_header("alice-token")
 

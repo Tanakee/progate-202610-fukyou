@@ -15,10 +15,31 @@ class CollectionsTest < ActionDispatch::IntegrationTest
   end
 
   test "回収済みの本人が再送したら、同じお気に入りを返す" do
-    2.times { post "/balloons/#{balloons(:bob_flying).id}/collect", headers: auth_header("alice-token") }
+    post "/balloons/#{balloons(:bob_flying).id}/collect", headers: auth_header("alice-token")
+    first_id = json["id"]
+
+    post "/balloons/#{balloons(:bob_flying).id}/collect", headers: auth_header("alice-token")
 
     assert_response :ok
+    assert_equal first_id, json["id"]
     assert_equal 1, users(:alice).favorites.count
+  end
+
+  test "他の人が回収済みの風船は 409" do
+    post "/balloons/#{balloons(:bob_flying).id}/collect", headers: auth_header("alice-token")
+    carol_token = User.create!(email: "carol@example.com", password: "password123").auth_tokens.create!.token
+
+    post "/balloons/#{balloons(:bob_flying).id}/collect", headers: auth_header(carol_token)
+
+    assert_response :conflict
+    assert_equal "balloon_not_flying", json["code"]
+  end
+
+  test "token がなければ 401" do
+    post "/balloons/#{balloons(:bob_flying).id}/collect"
+
+    assert_response :unauthorized
+    assert_equal "flying", balloons(:bob_flying).reload.status
   end
 
   test "自分の風船は回収できない" do

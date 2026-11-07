@@ -17,7 +17,8 @@ class BalloonsChannelTest < ActionCable::Channel::TestCase
     sent = transmissions.last["balloons"]
     assert_equal Balloon.flying.ids.sort, sent.map { _1["id"] }.sort
     assert_not_includes sent.map { _1["id"] }, balloons(:lost).id
-    assert sent.all? { _1.keys.sort == %w[id lat lng track_id ve vn] }
+    flying = balloons(:flying)
+    assert_includes sent, { "id" => flying.id, "track_id" => flying.track_id, "lat" => 33.5, "lng" => 130.5, "ve" => 0.0, "vn" => 0.0 }
   end
 
   test "定期処理からの snapshot を全員向けに配信する" do
