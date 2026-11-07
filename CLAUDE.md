@@ -21,6 +21,8 @@
 ## Rails の書き方
 
 - Rails の流儀（Rails way）に合わせる。迷ったら Rails のジェネレーター（`rails g scaffold`、`rails g authentication`）や gem の README が出力する形にそろえる
+- concern は使わない。共通の処理は `ApplicationController` や `ApplicationRecord` に直接書く
+- コードを太らせない。まれにしか起きないことのための処理や、1か所でしか使わない抽象化は入れない
 - API 専用の Rails なので、レスポンスは erb ではなく jbuilder で書く
   - アクションと同じ名前のテンプレート（例：`auth/signups/create.json.jbuilder`）を置き、暗黙の render に任せる
   - モデルの形はモデルごとの部分テンプレート（例：`users/_user.json.jbuilder`）にまとめる
