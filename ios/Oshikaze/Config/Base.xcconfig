@@ -1,0 +1,10 @@
+// 無料アカウントではBundle IDがチームをまたいで重複できないため、
+// 自分のアカウントで入れるときは Local.xcconfig で上書きする
+PRODUCT_BUNDLE_IDENTIFIER = com.tanakee.oshikaze
+
+// BEの接続先。xcconfig では // がコメントになるので $() で区切る。
+// 実機から手元のBEにつなぐときは Local.xcconfig で Macのアドレスにする
+API_BASE_URL = http:/$()/localhost:3000
+
+// DEVELOPMENT_TEAM は人ごとに違うので Local.xcconfig に書く（コミットしない）
+#include? "Local.xcconfig"
