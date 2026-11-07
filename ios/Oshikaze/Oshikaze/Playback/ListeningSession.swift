@@ -17,6 +17,7 @@ final class ListeningSession {
     let tracks: TrackStore
     let auth: AuthStore
     let myBalloon: MyBalloonStore
+    let pops: PopStore
 
     private var loop: Task<Void, Never>?
     private var decidedAt = Date.distantPast
@@ -33,18 +34,24 @@ final class ListeningSession {
     private static let secondsToCountPlay = 5
 
     init(feed: BalloonFeed, location: LocationProvider, playback: PlaybackController, tracks: TrackStore,
-         auth: AuthStore, myBalloon: MyBalloonStore) {
+         auth: AuthStore, myBalloon: MyBalloonStore, pops: PopStore) {
         self.feed = feed
         self.location = location
         self.playback = playback
         self.tracks = tracks
         self.auth = auth
         self.myBalloon = myBalloon
+        self.pops = pops
     }
 
-    /// 流さない風船。自分の風船は自分には流さない
+    /// 流さない風船。自分の風船と割った風船は流さない
     private var excludedBalloonIDs: Set<Int> {
-        myBalloon.balloon.map { [$0.id] } ?? []
+        pops.poppedIDs.union(myBalloon.balloon.map { [$0.id] } ?? [])
+    }
+
+    /// 自分の世界に見えている風船。割った風船は地図にも出さない
+    var visibleBalloons: [Balloon] {
+        feed.balloons.filter { !pops.poppedIDs.contains($0.id) }
     }
 
     var currentBalloon: Balloon? {

@@ -6,6 +6,7 @@ struct MainView: View {
     @Environment(ListeningSession.self) private var session
     @Environment(AuthStore.self) private var auth
     @Environment(MyBalloonStore.self) private var myBalloon
+    @Environment(PopStore.self) private var pops
     @State private var position = MapCameraPosition.userLocation(
         fallback: .camera(MapCamera(centerCoordinate: .init(latitude: 36.5, longitude: 137.5), distance: 3_000_000))
     )
@@ -15,6 +16,7 @@ struct MainView: View {
     @State private var showsLaunch = false
     @State private var confirmsCollect = false
     @State private var collectMessage: String?
+    @State private var showsSky = false
 
     /// 設計書の「前面にある間は30秒ごとに /me/balloons を読む」
     private static let myBalloonRefreshInterval: Duration = .seconds(30)
@@ -22,7 +24,7 @@ struct MainView: View {
     var body: some View {
         Map(position: $position) {
             UserAnnotation()
-            ForEach(session.feed.balloons) { balloon in
+            ForEach(session.visibleBalloons) { balloon in
                 Annotation("", coordinate: balloon.coordinate, anchor: .bottom) {
                     BalloonMark(id: balloon.id,
                                 isPlaying: balloon.id == session.currentBalloonID,
@@ -38,11 +40,23 @@ struct MainView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(alignment: .trailing, spacing: 12) {
-                LaunchButton(balloon: myBalloon.balloon) {
-                    if let balloon = myBalloon.balloon {
-                        showMyBalloon(balloon)
-                    } else {
-                        showsLaunch = true
+                HStack(spacing: 12) {
+                    Button {
+                        showsSky = true
+                    } label: {
+                        Label("空を見上げる", systemImage: "binoculars.fill")
+                            .font(.headline)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(.regularMaterial, in: Capsule())
+                    }
+                    .accessibilityHint("カメラで空を見て、パチンコで風船を割れます。スマホを振っても開きます")
+                    LaunchButton(balloon: myBalloon.balloon) {
+                        if let balloon = myBalloon.balloon {
+                            showMyBalloon(balloon)
+                        } else {
+                            showsLaunch = true
+                        }
                     }
                 }
                 PlaybackBar(isListening: $isListening) {
@@ -68,10 +82,20 @@ struct MainView: View {
         .sheet(isPresented: $showsLaunch) {
             LaunchSheet()
         }
+        .fullScreenCover(isPresented: $showsSky) {
+            SlingshotView()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
+            // 設計書の「スマホを振ると割る」を、空を見上げてパチンコで割る画面を開く操作にする
+            guard !showsLaunch, !showsAccount else { return }
+            showsSky = true
+        }
         .task(id: auth.token) {
             // ログインとログアウトのたびに読み直し、その後は30秒ごとに回数を更新する。
             // 先に空にするのは、別の人でログインし直したときに、前の人の風船が消えたと通知しないため
             myBalloon.clear()
+            pops.clear()
+            await pops.refresh(with: auth)
             while !Task.isCancelled {
                 await myBalloon.refresh(with: auth)
                 try? await Task.sleep(for: Self.myBalloonRefreshInterval)
