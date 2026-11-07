@@ -14,6 +14,9 @@ Rails.application.routes.draw do
     resource :me, only: :show, controller: :me
     namespace :me do
       resources :balloons, only: :index
+      resources :pops, only: :index, path: "popped"
+      resources :favorites, only: :index
+      resources :journeys, only: :index
     end
 
     resources :balloons, only: [] do
