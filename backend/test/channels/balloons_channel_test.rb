@@ -8,7 +8,7 @@ class BalloonsChannelTest < ActionCable::Channel::TestCase
     assert_has_stream "balloons"
     snapshot = transmissions.last
     assert_equal "balloons.snapshot", snapshot["event"]
-    assert_equal 1.0, snapshot["speed_scale"]
+    assert_equal Rails.configuration.x.speed_scale, snapshot["speed_scale"]
   end
 
   test "snapshot には飛行中の風船だけを載せ、飛ばした人は載せない" do

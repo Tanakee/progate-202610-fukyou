@@ -14,16 +14,16 @@ class Balloon < ApplicationRecord
       meters = speed_scale * (now - balloon.moved_at)
       lat = balloon.lat + north * meters / METERS_PER_DEGREE
       lng = balloon.lng + east * meters / (METERS_PER_DEGREE * Math.cos(balloon.lat * Math::PI / 180))
-      sanitize_sql_array([ "(?::bigint, ?::float8, ?::float8, ?::float8, ?::float8, ?::timestamp)", balloon.id, lat, lng, east, north, now ])
+      { id: balloon.id, lat:, lng:, speed_east: east, speed_north: north }
     end
     return if rows.empty?
 
-    # 1行ずつ update すると、5秒ごとに風船の数だけ SQL が走るので、VALUES でまとめて1文にする。
+    # 1行ずつ update すると、5秒ごとに風船の数だけ SQL が走るので、JSON で渡してまとめて1文にする。
     # 読んだあとに回収された風船を動かさないよう、更新の時点でも flying に絞る
-    connection.exec_update(<<~SQL)
+    connection.exec_update(sanitize_sql_array([ <<~SQL, now, rows.to_json ]))
       UPDATE balloons
-      SET lat = v.lat, lng = v.lng, speed_east = v.speed_east, speed_north = v.speed_north, moved_at = v.moved_at
-      FROM (VALUES #{rows.join(", ")}) AS v(id, lat, lng, speed_east, speed_north, moved_at)
+      SET lat = v.lat, lng = v.lng, speed_east = v.speed_east, speed_north = v.speed_north, moved_at = ?
+      FROM jsonb_to_recordset(?::jsonb) AS v(id bigint, lat float8, lng float8, speed_east float8, speed_north float8)
       WHERE balloons.id = v.id AND balloons.status = 'flying'
     SQL
   end

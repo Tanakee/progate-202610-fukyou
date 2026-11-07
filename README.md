@@ -85,13 +85,16 @@ API 専用の Rails なので、ビューは erb ではなく jbuilder（`app/vi
 node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-model-20261102-100000/candidate.json diagrams/erd-data-model-20261102-100000/data-model.html --quality showcase
 ```
 
-## 定期処理（ticker）と WebSocket
+## 定期処理と WebSocket
 
-`docker compose up` で、Web（`app`）とは別のコンテナ `ticker` が起動します。
+`docker compose up` で、Web（`app`）とは別に2つの定期処理のコンテナが起動します。
 
-- 風データ：Open-Meteo から日本周辺の1度格子（837地点）の風（地上10m、m/s）を3時間ごとに取得し、`wind_grid` に保存します。無料枠の1分あたりの上限に収めるため、300地点ずつ1分あけて取得します
-- 風船：5秒ごとに飛行中の風船を風で動かし、`/ws` の `BalloonsChannel` へ `balloons.snapshot` を配信します
+| コンテナ | rake タスク | 内容 |
+| --- | --- | --- |
+| `wind` | `wind:fetch` | Open-Meteo から、日本周辺の1度格子（837地点）の風（地上10m、m/s）を、取得がいちばん古い100地点ずつ20分ごとに取得して `wind_grid` に保存する。一周は約3時間。まだ一度も取得していない地点があるうちは1分ごとに取得する |
+| `balloons` | `balloons:move` | 保存済みの風データで、飛行中の風船を5秒ごとに動かし、`/ws` の `BalloonsChannel` へ `balloons.snapshot` を配信する |
+
+- Open-Meteo の無料枠は地点の数で数え、1分に600、1時間に5,000、1日に10,000までです。20分ごとに100地点なら1日7,200で収まります
 - 速度の倍率は `compose.yaml` の `SPEED_SCALE` で変えられます（変えたら `docker compose up -d` で作り直す）
-- 定期処理は advisory lock で1プロセスだけが動きます
-
-ログは `docker compose logs -f ticker` で見られます。
+- どちらの定期処理も advisory lock で1プロセスだけが動きます。落ちたら compose が再起動します
+- ログはエラーだけが出ます（`docker compose logs -f wind balloons`）。SQL などの詳しいログは `backend/log/development.log` にあります

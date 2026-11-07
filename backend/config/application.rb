@@ -25,7 +25,7 @@ module Backend
     config.time_zone = "Asia/Tokyo"
     config.i18n.default_locale = :ja
 
-    # 風船の速度の倍率。実際の風と等倍を初期値にし、デモでは早送りする
+    # デモの前に早送りするだけなので、設定用のテーブルは作らず環境変数で持つ
     config.x.speed_scale = ENV.fetch("SPEED_SCALE", "1").to_f
 
     config.action_cable.mount_path = "/ws"

@@ -21,11 +21,52 @@ class WindGridTest < ActiveSupport::TestCase
     assert_equal 0, WindGrid.count
   end
 
-  test "その時刻に有効な、最新の予報を返す" do
-    import_forecast(speed: 10, direction: 270, time: "2026-11-07T00:00")
-    import_forecast(speed: 10, direction: 0, time: "2026-11-07T01:00")
+  test "1時間より前の予報は消す" do
+    import_forecast(speed: 10, direction: 270, valid_time: 2.hours.ago)
 
-    assert_equal({ [ 35, 140 ] => [ 10.0, 0.0 ] }, WindGrid.at(Time.utc(2026, 11, 7, 0, 30)).transform_values { |v| v.map { _1.round(3) } })
+    assert_equal 0, WindGrid.count
+  end
+
+  test "その時刻に有効な、最新の予報を返す" do
+    this_hour = Time.current.beginning_of_hour
+    import_forecast(speed: 10, direction: 270, valid_time: this_hour)
+    import_forecast(speed: 10, direction: 0, valid_time: this_hour + 1.hour)
+
+    wind = WindGrid.at(this_hour + 30.minutes)
+
+    assert_equal [ [ 35, 140 ] ], wind.keys
+    assert_equal [ 10.0, 0.0 ], wind[[ 35, 140 ]].map { _1.round(3) }
+  end
+
+  test "まだ取得していない格子点を先に、次に取得が古い格子点を選ぶ" do
+    never_fetched = WindGrid::POINTS.first(60)
+    fetched_long_ago = WindGrid::POINTS[60, 60]
+    store_points(fetched_long_ago, fetched_at: 2.hours.ago)
+    store_points(WindGrid::POINTS.drop(120), fetched_at: 1.minute.ago)
+
+    points = WindGrid.stalest_points
+
+    assert_equal WindGrid::BATCH_SIZE, points.size
+    assert_empty never_fetched - points
+    assert_empty points - never_fetched - fetched_long_ago
+  end
+
+  test "取得していない格子点があれば、間隔を待たずに取得する" do
+    store_points(WindGrid::POINTS.drop(1), fetched_at: 1.minute.ago)
+
+    assert WindGrid.fetch_due?
+  end
+
+  test "全ての格子点がそろっていれば、前回の取得から20分たつまで取得しない" do
+    store_points(WindGrid::POINTS, fetched_at: 19.minutes.ago)
+
+    assert_not WindGrid.fetch_due?
+  end
+
+  test "全ての格子点がそろっていても、前回の取得から20分たてば取得する" do
+    store_points(WindGrid::POINTS, fetched_at: 21.minutes.ago)
+
+    assert WindGrid.fetch_due?
   end
 
   test "格子点の間では、周りの4点の風を距離で重み付けして求める" do
@@ -41,17 +82,21 @@ class WindGridTest < ActiveSupport::TestCase
   end
 
   test "格子の外では、いちばん近い端の風を使う" do
-    wind = WindGrid::LATITUDES.to_a.product(WindGrid::LONGITUDES.to_a).to_h { [ _1, [ 1.0, 2.0 ] ] }
+    wind = WindGrid::POINTS.to_h { [ _1, [ 1.0, 2.0 ] ] }
 
     assert_equal [ 1.0, 2.0 ], WindGrid.velocity(wind, 10.0, 160.0)
   end
 
   private
-    def import_forecast(speed:, direction:, time: "2026-11-07T00:00", returned_lat: 35.0, returned_lng: 140.0)
+    def import_forecast(speed:, direction:, valid_time: Time.current.beginning_of_hour, returned_lat: 35.0, returned_lng: 140.0)
       forecast = {
         "latitude" => returned_lat, "longitude" => returned_lng,
-        "hourly" => { "time" => [ time ], "wind_speed_10m" => [ speed ], "wind_direction_10m" => [ direction ] }
+        "hourly" => { "time" => [ valid_time.utc.strftime("%Y-%m-%dT%H:%M") ], "wind_speed_10m" => [ speed ], "wind_direction_10m" => [ direction ] }
       }
       WindGrid.import!([ [ 35, 140 ] ], [ forecast ], fetched_at: Time.current)
+    end
+
+    def store_points(points, fetched_at:, valid_time: Time.current.beginning_of_hour)
+      WindGrid.insert_all(points.map { |lat, lng| { lat:, lng:, valid_time:, speed_east: 0, speed_north: 0, fetched_at: } })
     end
 end

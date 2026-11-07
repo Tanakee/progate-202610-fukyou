@@ -34,13 +34,22 @@ services:
       timeout: 5s
       retries: 60
 
-  ticker:
+  wind:
     <<: *rails
     # gem のインストールと DB の準備は app に任せる。同じボリュームへ同時にインストールすると壊れるため
     depends_on:
       app:
         condition: service_healthy
-    command: ["ruby", "bin/rails", "ticker:run"]
+    command: ["ruby", "bin/rails", "wind:fetch"]
+    restart: unless-stopped
+
+  balloons:
+    <<: *rails
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["ruby", "bin/rails", "balloons:move"]
+    restart: unless-stopped
 
   db:
     image: postgres:17

@@ -1,7 +1,7 @@
 require "test_helper"
 
 class BalloonTest < ActiveSupport::TestCase
-  WEST_WIND = WindGrid::LATITUDES.to_a.product(WindGrid::LONGITUDES.to_a).to_h { [ _1, [ 10.0, 0.0 ] ] }
+  WEST_WIND = WindGrid::POINTS.to_h { [ _1, [ 10.0, 0.0 ] ] }
 
   test "飛行中の風船を、前回からの経過時間だけ風で進める" do
     balloon = balloons(:flying)
