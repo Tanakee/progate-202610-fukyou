@@ -2,8 +2,8 @@
   "schema_version": 1,
   "diagram_type": "erd",
   "meta": {
-    "title": "データモデル案",
-    "subtitle": "API設計から導いた案。テーブル定義は実装時に確定する",
+    "title": "データモデル",
+    "subtitle": "backend/db/migrate のマイグレーションに合わせた図。時刻はUTCで保存し、アプリはAsia/Tokyoで扱う",
     "views": [
       {
         "id": "core",
@@ -55,21 +55,25 @@
       "attributes": [
         {
           "name": "id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "pk"
         },
         {
           "name": "email",
-          "type": "text",
+          "type": "varchar",
           "key": "uk"
         },
         {
           "name": "password_digest",
-          "type": "text"
+          "type": "varchar"
         },
         {
           "name": "created_at",
-          "type": "timestamptz"
+          "type": "timestamp"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp"
         }
       ]
     },
@@ -82,23 +86,27 @@
       "attributes": [
         {
           "name": "id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "pk"
         },
         {
           "name": "user_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "fk",
           "references": "users.id"
         },
         {
           "name": "token_digest",
-          "type": "text",
+          "type": "varchar",
           "key": "uk"
         },
         {
           "name": "created_at",
-          "type": "timestamptz"
+          "type": "timestamp"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp"
         }
       ]
     },
@@ -111,26 +119,34 @@
       "attributes": [
         {
           "name": "id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "pk"
         },
         {
           "name": "user_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "fk",
           "references": "users.id"
         },
         {
           "name": "title",
-          "type": "text"
+          "type": "varchar"
         },
         {
           "name": "artist",
-          "type": "text"
+          "type": "varchar"
         },
         {
           "name": "mp3_url",
-          "type": "text"
+          "type": "varchar"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp"
         }
       ]
     },
@@ -144,28 +160,28 @@
       "attributes": [
         {
           "name": "id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "pk"
         },
         {
-          "name": "owner_id",
-          "type": "uuid",
+          "name": "user_id",
+          "type": "bigint",
           "key": "fk",
           "references": "users.id"
         },
         {
           "name": "track_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "fk",
           "references": "tracks.id"
         },
         {
           "name": "status",
-          "type": "text"
+          "type": "varchar"
         },
         {
           "name": "origin_label",
-          "type": "text"
+          "type": "varchar"
         },
         {
           "name": "origin_lat",
@@ -192,16 +208,28 @@
           "type": "double"
         },
         {
+          "name": "moved_at",
+          "type": "timestamp"
+        },
+        {
           "name": "play_count",
-          "type": "int"
+          "type": "integer"
         },
         {
           "name": "launched_at",
-          "type": "timestamptz"
+          "type": "timestamp"
         },
         {
           "name": "ended_at",
-          "type": "timestamptz"
+          "type": "timestamp"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp"
         }
       ]
     },
@@ -214,7 +242,7 @@
       "attributes": [
         {
           "name": "balloon_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": [
             "pk",
             "fk"
@@ -223,7 +251,7 @@
         },
         {
           "name": "user_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": [
             "pk",
             "fk"
@@ -232,7 +260,7 @@
         },
         {
           "name": "played_at",
-          "type": "timestamptz"
+          "type": "timestamp"
         }
       ]
     },
@@ -245,7 +273,7 @@
       "attributes": [
         {
           "name": "balloon_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": [
             "pk",
             "fk"
@@ -254,7 +282,7 @@
         },
         {
           "name": "user_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": [
             "pk",
             "fk"
@@ -263,7 +291,7 @@
         },
         {
           "name": "popped_at",
-          "type": "timestamptz"
+          "type": "timestamp"
         }
       ]
     },
@@ -276,18 +304,18 @@
       "attributes": [
         {
           "name": "id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "pk"
         },
         {
           "name": "user_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "fk",
           "references": "users.id"
         },
         {
           "name": "balloon_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": [
             "uk",
             "fk"
@@ -297,6 +325,14 @@
         {
           "name": "collected_on",
           "type": "date"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp"
         }
       ]
     },
@@ -310,12 +346,12 @@
       "attributes": [
         {
           "name": "id",
-          "type": "uuid",
+          "type": "bigint",
           "key": "pk"
         },
         {
           "name": "balloon_id",
-          "type": "uuid",
+          "type": "bigint",
           "key": [
             "uk",
             "fk"
@@ -324,11 +360,11 @@
         },
         {
           "name": "end_reason",
-          "type": "text"
+          "type": "varchar"
         },
         {
           "name": "end_label",
-          "type": "text"
+          "type": "varchar"
         },
         {
           "name": "end_lat",
@@ -340,15 +376,19 @@
         },
         {
           "name": "duration_seconds",
-          "type": "int"
+          "type": "integer"
         },
         {
           "name": "play_count",
-          "type": "int"
+          "type": "integer"
         },
         {
           "name": "created_at",
-          "type": "timestamptz"
+          "type": "timestamp"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp"
         }
       ]
     },
@@ -371,7 +411,7 @@
         },
         {
           "name": "valid_time",
-          "type": "timestamptz",
+          "type": "timestamp",
           "key": "pk"
         },
         {
@@ -384,14 +424,14 @@
         },
         {
           "name": "fetched_at",
-          "type": "timestamptz"
+          "type": "timestamp"
         }
       ]
     }
   ],
   "relationships": [
     {
-      "id": "balloon-owner",
+      "id": "balloon-user",
       "from": "balloons",
       "to": "users",
       "label": "飛ばす",
@@ -456,17 +496,19 @@
       "items": [
         "favorites の user_id と collected_on の組は一意にして、1日1回を守る",
         "先着は status を条件にした更新で決める",
-        "owner_id ごとに飛行中は1個という部分一意を付ける",
+        "user_id ごとに飛行中は1個という部分一意を付ける",
         "status の値は flying、collected、lost"
       ]
     },
     {
       "dot": "cyan",
-      "title": "plays と pops",
+      "title": "更新の多い列",
       "items": [
-        "plays の複合主キーで同じ人の二重加算を防ぐ",
+        "plays と pops の複合主キーで、同じ人の二重加算と二重の割るを防ぐ",
         "play_count はSQLの増分で更新する",
-        "pops の行があれば、その人には流さない"
+        "pops の行があれば、その人には流さない",
+        "lat、lng、speed_*、moved_at は5秒ごとに更新するので索引を付けない（HOT更新を保つ）",
+        "次の位置は moved_at からの実際の経過時間で計算する"
       ]
     },
     {
