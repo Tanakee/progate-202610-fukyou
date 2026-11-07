@@ -92,7 +92,7 @@ node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-mod
 | コンテナ | rake タスク | 内容 |
 | --- | --- | --- |
 | `wind` | `wind:fetch` | Open-Meteo から、日本周辺の1度格子（837地点）の風（地上10m、m/s）を、取得がいちばん古い100地点ずつ20分ごとに取得して `wind_grid` に保存する。一周は約3時間。まだ一度も取得していない地点があるうちは1分ごとに取得する |
-| `balloons` | `balloons:move` | 保存済みの風データで、飛行中の風船を5秒ごとに動かし、`/ws` の `BalloonsChannel` へ `balloons.snapshot` を配信する。日本の排他的経済水域（EEZ）の外へ出た風船は割れる（`status` が `lost` になる） |
+| `balloons` | `balloons:move` | 保存済みの風データで、飛行中の風船を5秒ごとに動かし、`/ws` の `BalloonsChannel` へ `balloons.snapshot` を配信する。日本の排他的経済水域（EEZ）の外へ出た風船は割れる（`status` が `lost` になる）。港から10km以内に来た風船は船の航路に乗り、風に関係なく1分で行き先の港へ運ばれる |
 
 - Open-Meteo の無料枠は地点の数で数え、1分に600、1時間に5,000、1日に10,000までです。20分ごとに100地点なら1日7,200で収まります
 - 速度の倍率は `compose.yaml` の `SPEED_SCALE` で変えられます（変えたら `docker compose up -d` で作り直す）
@@ -105,3 +105,11 @@ node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-mod
 ### 日本の排他的経済水域のデータ
 
 `backend/config/japan_eez.json` は、[Marine Regions](https://www.marineregions.org/) の Maritime Boundaries and Exclusive Economic Zones（200NM）version 12（CC BY 4.0）から作りました。日本の EEZ に加え、北方領土・尖閣諸島・竹島周辺の主張の重なる海域と、日韓の共同開発区域を含みます。EEZ の形は陸地が穴になっているので外側の輪だけを使い（陸地も中に含める）、0.02度（約2 km）で間引いています。
+
+### 船の航路のデータ
+
+`backend/config/sea_routes.json` は、[国土数値情報（港湾間流通量・海上経路データ）](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-S10a-v1_2.html)の平成28年度の海上経路（国土交通省、商用利用可）から作りました。日本の港どうしを結ぶフェリー・RORO船・貨物船などの航路455本（230港）と、週の便数を持ちます。国際航路と、便数のない航路は除いています。
+
+- 航路の線は、出発港・寄港地・到着港を直線で結んだものです。実際に船が通る海の上の道ではないので、陸を横切ることがあります
+- 行き先は、その港から出る航路の中から、週の便数が多いほど選ばれやすくしています
+- 降りた港では、次に別の港へ着くまで乗り直しません
