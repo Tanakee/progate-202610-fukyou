@@ -1,0 +1,6 @@
+// Local.xcconfig にコピーして使う。Team IDは Xcode の Settings > Accounts で確認できる
+DEVELOPMENT_TEAM = XXXXXXXXXX
+// PRODUCT_BUNDLE_IDENTIFIER = com.example.oshikaze
+
+// 実機から手元のBEにつなぐとき。IPv6のアドレスは [] で囲む
+// API_BASE_URL = http:/$()/192.168.x.x:3000
