@@ -101,6 +101,26 @@ final class ListeningSession {
         playback.play(track)
     }
 
+    /// 流している風船を今日の1曲として回収する。回収した風船はみんなの空から消えるので、すぐ次の風船へ乗り換える
+    @discardableResult
+    func collectCurrent() async throws -> Favorite? {
+        guard let balloonID = currentBalloonID else { return nil }
+        do {
+            let favorite: Favorite = try await auth.client.send(.post, "balloons/\(balloonID)/collect")
+            feed.remove(balloonID)
+            decidedAt = .distantPast
+            return favorite
+        } catch let error as APIError where error.status == 409 {
+            // 先に誰かが回収したか、旅が終わっていた。地図からも消しておく
+            feed.remove(balloonID)
+            decidedAt = .distantPast
+            throw error
+        } catch {
+            auth.handle(error)
+            throw error
+        }
+    }
+
     /// 曲の取得に失敗していたら、無音で待ちつつ取り直す
     private func retryTrackIfNeeded() {
         guard currentTrack == nil, !isLoadingTrack, let balloon = currentBalloon else { return }

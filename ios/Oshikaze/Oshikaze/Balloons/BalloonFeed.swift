@@ -43,6 +43,11 @@ final class BalloonFeed {
     private var anchoredAt = Date.now
     private var speedScale = 1.0
     private var latestSeq = 0
+    /// 回収などで消した風船と、消した時刻。届く途中の古い配信で復活させない
+    private var removedAt: [Int: Date] = [:]
+
+    /// 消した風船を無視する時間。配信は5秒ごとなので、その数回分
+    private static let removalGrace: TimeInterval = 20
 
     private static let channelIdentifier = #"{"channel":"BalloonsChannel"}"#
     /// Action Cable は3秒ごとに ping を送るので、これだけ何も届かなければ切断とみなす
@@ -177,15 +182,23 @@ final class BalloonFeed {
 
     // MARK: - 位置
 
+    /// 回収した風船を、次の配信を待たずに地図から消す
+    func remove(_ id: Int) {
+        removedAt[id] = .now
+        anchors.removeAll { $0.id == id }
+        updatePositions()
+    }
+
     private func apply(_ snapshot: BalloonsSnapshot) {
         // 届く順が入れ替わっても、古い配信で巻き戻さない
         guard snapshot.seq >= latestSeq else { return }
         latestSeq = snapshot.seq
         speedScale = snapshot.speedScale
         anchoredAt = .now
+        removedAt = removedAt.filter { Date.now.timeIntervalSince($0.value) < Self.removalGrace }
         anchors = snapshot.balloons.compactMap { item in
             let coordinate = CLLocationCoordinate2D(latitude: item.lat, longitude: item.lng)
-            guard CLLocationCoordinate2DIsValid(coordinate) else { return nil }
+            guard CLLocationCoordinate2DIsValid(coordinate), removedAt[item.id] == nil else { return nil }
             return Anchor(id: item.id, trackID: item.trackID, coordinate: coordinate, east: item.ve, north: item.vn)
         }
         updatePositions()
