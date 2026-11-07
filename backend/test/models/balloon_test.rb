@@ -36,4 +36,16 @@ class BalloonTest < ActiveSupport::TestCase
       Balloon.move_flying!(wind: {}, speed_scale: 1, now: Time.current)
     end
   end
+
+  test "範囲の南東の角から出た風船は、北西の角の側から戻る" do
+    balloon = balloons(:flying)
+    balloon.update!(lat: 20.001, lng: 147.999)
+    south_east_wind = WindGrid::POINTS.to_h { [ _1, [ 10.0, -10.0 ] ] }
+
+    Balloon.move_flying!(wind: south_east_wind, speed_scale: 1, now: balloon.moved_at + 100.seconds)
+
+    balloon.reload
+    assert_in_delta 49.992, balloon.lat, 0.001
+    assert_in_delta 122.008, balloon.lng, 0.001
+  end
 end

@@ -14,7 +14,7 @@ class Balloon < ApplicationRecord
       meters = speed_scale * (now - balloon.moved_at)
       lat = balloon.lat + north * meters / METERS_PER_DEGREE
       lng = balloon.lng + east * meters / (METERS_PER_DEGREE * Math.cos(balloon.lat * Math::PI / 180))
-      { id: balloon.id, lat:, lng:, speed_east: east, speed_north: north }
+      { id: balloon.id, lat: wrap(lat, WindGrid::LATITUDES), lng: wrap(lng, WindGrid::LONGITUDES), speed_east: east, speed_north: north }
     end
     return if rows.empty?
 
@@ -27,4 +27,10 @@ class Balloon < ApplicationRecord
       WHERE balloons.id = v.id AND balloons.status = 'flying'
     SQL
   end
+
+  # 範囲の外で割らずに反対側の端から戻すのは、季節風で南東へ流れた風船を太平洋にためず、また日本の上を通らせるため
+  def self.wrap(degree, range)
+    range.min + (degree - range.min) % (range.max - range.min)
+  end
+  private_class_method :wrap
 end
