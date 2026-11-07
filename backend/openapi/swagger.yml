@@ -40,9 +40,8 @@ info:
 
     資料で決まっていない部分は、この定義で提案しています。実装との合意後に確定します。
 
-    - 新規登録でも `token` と `user` を返す（登録直後にログインした状態にする）
-    - ログイン失敗は `401`、メールの重複は `409`、入力不正は `422`、存在しないIDは `404`
-    - エラーの `code` の具体的な値、文字数の上限、`end_reason` の値
+    - 存在しないIDは `404`
+    - 認証以外のエラーの `code` の具体的な値、曲名などの文字数の上限、`end_reason` の値
     - 座標の対象範囲（資料で未指定のため、数値の制約は付けていない）
     - `speed_east` / `speed_north` の単位（m/s など）
     - WebSocket の本人用チャンネルも、RESTと同じ `Authorization: Bearer <token>` ヘッダーを付けて接続する
@@ -91,7 +90,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResult'
         '409':
-          description: このメールアドレスは登録済み（提案）
+          description: このメールアドレスは登録済み（大文字と小文字は区別しない）
           content:
             application/json:
               schema:
@@ -124,7 +123,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResult'
         '401':
-          description: メールアドレスまたはパスワードが違う（提案）
+          description: メールアドレスまたはパスワードが違う。登録されていないメールアドレスでも同じ応答にする
           content:
             application/json:
               schema:
@@ -132,6 +131,15 @@ paths:
               example:
                 code: invalid_credentials
                 message: メールアドレスまたはパスワードが違います
+        '429':
+          description: 同じ接続元から3分間に10回を超えてログインを試みた
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: too_many_requests
+                message: しばらくしてからもう一度お試しください
 
   /auth/session:
     delete:
@@ -571,14 +579,14 @@ components:
             code: not_found
             message: 見つかりません
     ValidationError:
-      description: 入力が正しくない（提案）
+      description: 入力が正しくない
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
           example:
             code: validation_failed
-            message: パスワードを入力してください
+            message: パスワードは8文字以上で入力してください
 
   schemas:
     Credentials:
@@ -588,10 +596,14 @@ components:
         email:
           type: string
           format: email
+          description: 前後の空白を除き、小文字にそろえて保存する
           example: oshi@example.com
         password:
           type: string
           format: password
+          minLength: 8
+          maxLength: 128
+          description: 8〜128文字。argon2 でハッシュ化して保存する
           example: password123
 
     Error:

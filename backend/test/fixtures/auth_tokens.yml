@@ -1,0 +1,3 @@
+alice_token:
+  user: alice
+  token_digest: <%= AuthToken.digest("alice-token") %>

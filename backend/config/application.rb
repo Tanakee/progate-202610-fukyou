@@ -23,11 +23,15 @@ module Backend
     #
     # 1日の区切り（回収は1日1回）を日本時間の0時にする。DBには UTC で保存する
     config.time_zone = "Asia/Tokyo"
+    config.i18n.default_locale = :ja
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Only loads a smaller set of middleware suitable for API only apps.
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # routes の defaults format: :json で全リクエストに format が付き、permit のたびに警告が出るのを防ぐ
+    config.action_controller.always_permitted_parameters = %w[controller action format]
   end
 end

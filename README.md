@@ -31,6 +31,15 @@ docker compose down
 
 DB のデータは Docker のボリュームに保存され、次回の起動時にも使われます。
 
+### テスト
+
+```sh
+docker compose exec app ruby bin/rails test
+```
+
+テストは `fukyou_test` を使います。開発用の `fukyou_development` には影響しません。
+DB の接続先は `compose.yaml` の `DB_HOST` / `DB_USERNAME` / `DB_PASSWORD` で指定しています（`DATABASE_URL` は全ての環境に効いてしまうため使いません）。
+
 ## データベース
 
 テーブルは `backend/db/migrate/` のマイグレーションで作ります。図は `docs/diagrams/erd-data-model-20261102-100000/data-model.html` です。

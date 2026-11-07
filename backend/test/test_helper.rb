@@ -9,7 +9,18 @@ module ActiveSupport
 
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
+  end
+end
 
-    # Add more helper methods to be used by all tests here...
+module ActionDispatch
+  class IntegrationTest
+    private
+      def auth_header(token)
+        { "Authorization" => "Bearer #{token}" }
+      end
+
+      def json
+        response.parsed_body
+      end
   end
 end

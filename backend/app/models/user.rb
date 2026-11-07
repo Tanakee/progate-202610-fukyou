@@ -1,0 +1,25 @@
+class User < ApplicationRecord
+  # 利用者がいないときに照合を省くと、応答の速さで登録済みのメールアドレスを見分けられてしまう
+  DUMMY_PASSWORD_DIGEST = Argon2::Password.create(SecureRandom.hex(16))
+
+  has_many :auth_tokens, dependent: :delete_all
+
+  normalizes :email, with: ->(email) { email.strip.downcase }
+
+  validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: true
+  validates :password, presence: true, length: { in: 8..128 }, on: :create
+
+  attr_reader :password
+
+  # 組み込みの authenticate_by は has_secure_password の bcrypt で照合するので、argon2 で照合するよう上書きする
+  def self.authenticate_by(attributes)
+    user = find_by(email: attributes[:email])
+    user if Argon2::Password.verify_password(attributes[:password].to_s, user&.password_digest || DUMMY_PASSWORD_DIGEST)
+  end
+
+  # has_secure_password（bcrypt）にしないのは、bcrypt が72バイトを超えた部分を無視し、argon2id より総当たりに弱いから
+  def password=(password)
+    @password = password
+    self.password_digest = Argon2::Password.create(password.to_s)
+  end
+end

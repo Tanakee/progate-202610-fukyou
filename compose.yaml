@@ -6,7 +6,9 @@ services:
       - ./backend:/app
       - gems:/usr/local/bundle
     environment:
-      DATABASE_URL: "postgresql://app:local_dev_password@db:5432/fukyou_development"
+      DB_HOST: db
+      DB_USERNAME: app
+      DB_PASSWORD: local_dev_password
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
