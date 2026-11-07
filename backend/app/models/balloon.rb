@@ -14,23 +14,19 @@ class Balloon < ApplicationRecord
       meters = speed_scale * (now - balloon.moved_at)
       lat = balloon.lat + north * meters / METERS_PER_DEGREE
       lng = balloon.lng + east * meters / (METERS_PER_DEGREE * Math.cos(balloon.lat * Math::PI / 180))
-      { id: balloon.id, lat: wrap(lat, WindGrid::LATITUDES), lng: wrap(lng, WindGrid::LONGITUDES), speed_east: east, speed_north: north }
+      { id: balloon.id, lat:, lng:, speed_east: east, speed_north: north, lost: !JapanEez.cover?(lat, lng) }
     end
     return if rows.empty?
 
     # 1行ずつ update すると、5秒ごとに風船の数だけ SQL が走るので、JSON で渡してまとめて1文にする。
     # 読んだあとに回収された風船を動かさないよう、更新の時点でも flying に絞る
-    connection.exec_update(sanitize_sql_array([ <<~SQL, now, rows.to_json ]))
+    connection.exec_update(sanitize_sql_array([ <<~SQL, now, now, rows.to_json ]))
       UPDATE balloons
-      SET lat = v.lat, lng = v.lng, speed_east = v.speed_east, speed_north = v.speed_north, moved_at = ?
-      FROM jsonb_to_recordset(?::jsonb) AS v(id bigint, lat float8, lng float8, speed_east float8, speed_north float8)
+      SET lat = v.lat, lng = v.lng, speed_east = v.speed_east, speed_north = v.speed_north, moved_at = ?,
+          status = CASE WHEN v.lost THEN 'lost' ELSE balloons.status END,
+          ended_at = CASE WHEN v.lost THEN ? ELSE balloons.ended_at END
+      FROM jsonb_to_recordset(?::jsonb) AS v(id bigint, lat float8, lng float8, speed_east float8, speed_north float8, lost boolean)
       WHERE balloons.id = v.id AND balloons.status = 'flying'
     SQL
   end
-
-  # 範囲の外で割らずに反対側の端から戻すのは、季節風で南東へ流れた風船を太平洋にためず、また日本の上を通らせるため
-  def self.wrap(degree, range)
-    range.min + (degree - range.min) % (range.max - range.min)
-  end
-  private_class_method :wrap
 end

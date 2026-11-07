@@ -37,15 +37,20 @@ class BalloonTest < ActiveSupport::TestCase
     end
   end
 
-  test "範囲の南東の角から出た風船は、北西の角の側から戻る" do
+  test "日本の排他的経済水域の外へ出た風船は割れる" do
     balloon = balloons(:flying)
-    balloon.update!(lat: 20.001, lng: 147.999)
-    south_east_wind = WindGrid::POINTS.to_h { [ _1, [ 10.0, -10.0 ] ] }
+    balloon.update!(lat: 35.0, lng: 157.0)
 
-    Balloon.move_flying!(wind: south_east_wind, speed_scale: 1, now: balloon.moved_at + 100.seconds)
+    Balloon.move_flying!(wind: WEST_WIND, speed_scale: 1, now: balloon.moved_at + 100.seconds)
 
     balloon.reload
-    assert_in_delta 49.992, balloon.lat, 0.001
-    assert_in_delta 122.008, balloon.lng, 0.001
+    assert_equal "lost", balloon.status
+    assert_equal Time.utc(2026, 11, 7, 0, 1, 40), balloon.ended_at
+  end
+
+  test "排他的経済水域の中にいる風船は飛び続ける" do
+    Balloon.move_flying!(wind: WEST_WIND, speed_scale: 1, now: balloons(:flying).moved_at + 100.seconds)
+
+    assert_equal "flying", balloons(:flying).reload.status
   end
 end
