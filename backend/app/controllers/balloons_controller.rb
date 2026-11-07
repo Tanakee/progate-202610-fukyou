@@ -7,7 +7,7 @@ class BalloonsController < ApplicationController
 
     if @balloon.save
       render :create, status: :created
-    elsif @balloon.errors.of_kind?(:origin_lat, :in) || @balloon.errors.of_kind?(:origin_lng, :in)
+    elsif @balloon.errors.of_kind?(:origin, :out_of_range)
       render_error :unprocessable_content, code: "origin_out_of_range", message: "この場所からは飛ばせません"
     else
       render_error :unprocessable_content, code: "validation_failed", message: @balloon.errors.full_messages.first

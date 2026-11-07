@@ -48,7 +48,7 @@ class LaunchBalloonTest < ActionDispatch::IntegrationTest
     assert_equal "forbidden_track", json["code"]
   end
 
-  test "出発地点が日本周辺の外なら 422" do
+  test "出発地点が日本の排他的経済水域の外なら 422" do
     post "/balloons", params: launch_params(track_id: @bob_song.id, origin_lat: 10.0), headers: auth_header(@bob_token), as: :json
 
     assert_response :unprocessable_content
