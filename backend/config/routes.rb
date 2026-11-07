@@ -11,6 +11,10 @@ Rails.application.routes.draw do
       resource :session, only: :destroy
     end
 
-    resource :me, only: :show, controller: :me
+    resource :me, only: :show, controller: :me do
+      get :tracks, to: "tracks#mine"
+    end
+
+    resources :tracks, only: [:create, :show]
   end
 end
