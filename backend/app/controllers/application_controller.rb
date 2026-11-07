@@ -3,6 +3,10 @@ class ApplicationController < ActionController::API
 
   before_action :authenticate
 
+  rescue_from ActiveRecord::RecordNotFound do
+    render_error :not_found, code: "not_found", message: "見つかりません"
+  end
+
   # アプリは平たい JSON を送る。モデル名のキーで包むと、permit のたびに不要なキーが混ざるので包まない
   wrap_parameters false
 
