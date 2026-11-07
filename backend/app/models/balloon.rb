@@ -3,6 +3,7 @@ class Balloon < ApplicationRecord
 
   belongs_to :user
   belongs_to :track
+  has_one :journey
 
   class NotFlying < StandardError; end
 

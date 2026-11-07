@@ -8,6 +8,7 @@ class User < ApplicationRecord
   has_many :plays
   has_many :pops
   has_many :favorites
+  has_many :journeys, through: :balloons
 
   normalizes :email, with: ->(email) { email.strip.downcase }
 
