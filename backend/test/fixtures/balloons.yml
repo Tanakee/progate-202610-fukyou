@@ -1,0 +1,24 @@
+flying:
+  user: alice
+  track: alice_song
+  status: flying
+  origin_label: 福岡市中央区
+  origin_lat: 33.5
+  origin_lng: 130.5
+  lat: 33.5
+  lng: 130.5
+  moved_at: 2026-11-07 00:00:00
+  launched_at: 2026-11-07 00:00:00
+
+lost:
+  user: alice
+  track: alice_song
+  status: lost
+  origin_label: 福岡市中央区
+  origin_lat: 33.5
+  origin_lng: 130.5
+  lat: 34.5
+  lng: 135.5
+  moved_at: 2026-11-06 00:00:00
+  launched_at: 2026-11-05 00:00:00
+  ended_at: 2026-11-06 00:00:00

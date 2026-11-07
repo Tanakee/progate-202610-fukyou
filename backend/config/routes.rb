@@ -12,5 +12,6 @@ Rails.application.routes.draw do
     end
 
     resource :me, only: :show, controller: :me
+    resources :balloons, only: :create
   end
 end

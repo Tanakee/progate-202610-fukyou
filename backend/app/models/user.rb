@@ -3,6 +3,8 @@ class User < ApplicationRecord
   DUMMY_PASSWORD_DIGEST = Argon2::Password.create(SecureRandom.hex(16))
 
   has_many :auth_tokens, dependent: :delete_all
+  has_many :tracks
+  has_many :balloons
 
   normalizes :email, with: ->(email) { email.strip.downcase }
 
