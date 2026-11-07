@@ -25,7 +25,9 @@ enum Notifier {
         } else if let journey {
             post(title: "あなたの風船の旅が終わりました", body: "\(journey.endDescription)。\(plays)回聴かれました。")
         } else {
-            post(title: "あなたの風船の旅が終わりました", body: "\(plays)回聴かれました。マイページの旅の記録を見てみましょう。")
+            // 旅の記録がないと、回収されたのか海や国外へ出たのかを見分けられない。
+            // BEが記録を作るまでは、空の旅の記録へは案内しない
+            post(title: "あなたの風船の旅が終わりました", body: "\(plays)回聴かれた旅でした。")
         }
     }
 }
