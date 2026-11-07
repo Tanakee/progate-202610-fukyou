@@ -1,6 +1,6 @@
 module Auth
   class SessionsController < ApplicationController
-    allow_unauthenticated_access only: :create
+    skip_before_action :authenticate, only: :create
     rate_limit to: 10, within: 3.minutes, only: :create, with: -> {
       render_error :too_many_requests, code: "too_many_requests", message: "しばらくしてからもう一度お試しください"
     }
@@ -15,7 +15,7 @@ module Auth
 
     # 他の端末でのログインまで切らないよう、送られてきた token だけを消す
     def destroy
-      Current.auth_token.destroy!
+      current_auth_token.destroy!
       head :no_content
     end
   end

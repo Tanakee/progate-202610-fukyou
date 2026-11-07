@@ -3,7 +3,10 @@ class AuthToken < ApplicationRecord
 
   attr_reader :token
 
-  before_create :generate_token
+  before_create do
+    @token = SecureRandom.urlsafe_base64(32)
+    self.token_digest = self.class.digest(token)
+  end
 
   def self.find_by_token(token)
     find_by(token_digest: digest(token))
@@ -13,10 +16,4 @@ class AuthToken < ApplicationRecord
   def self.digest(token)
     OpenSSL::Digest::SHA256.hexdigest(token)
   end
-
-  private
-    def generate_token
-      @token = SecureRandom.urlsafe_base64(32)
-      self.token_digest = self.class.digest(token)
-    end
 end
