@@ -8,29 +8,30 @@ import Observation
 final class ListeningSession {
     /// 流している風船のID
     private(set) var currentBalloonID: Int?
+    /// 流している風船の曲。取得できるまでは nil
+    private(set) var currentTrack: Track?
 
     let feed: BalloonFeed
     let location: LocationProvider
     let playback: PlaybackController
+    let tracks: TrackStore
 
     private var loop: Task<Void, Never>?
     private var decidedAt = Date.distantPast
+    private var isLoadingTrack = false
 
     /// 設計書の「切り替えの判定は30秒に1回」
     private static let decisionInterval: TimeInterval = 30
 
-    init(feed: BalloonFeed, location: LocationProvider, playback: PlaybackController) {
+    init(feed: BalloonFeed, location: LocationProvider, playback: PlaybackController, tracks: TrackStore) {
         self.feed = feed
         self.location = location
         self.playback = playback
+        self.tracks = tracks
     }
 
     var currentBalloon: Balloon? {
         feed.balloons.first { $0.id == currentBalloonID }
-    }
-
-    var currentTrack: Track? {
-        currentBalloon.map { TrackCatalog.track(id: $0.trackID) }
     }
 
     /// 流している風船までの距離（m）
@@ -50,6 +51,7 @@ final class ListeningSession {
     }
 
     private func decideIfNeeded() {
+        retryTrackIfNeeded()
         guard let here = location.coordinate else { return }
         let currentIsGone = currentBalloonID != nil && currentBalloon == nil
         let isDue = Date.now.timeIntervalSince(decidedAt) >= Self.decisionInterval
@@ -60,6 +62,27 @@ final class ListeningSession {
         let picked = NearestBalloonPicker.pick(from: feed.balloons, at: here, current: currentIsGone ? nil : currentBalloonID)
         guard picked != currentBalloonID || currentIsGone else { return }
         currentBalloonID = picked
-        playback.play(currentTrack)
+        currentTrack = nil
+        guard let balloon = currentBalloon else {
+            playback.play(nil)
+            return
+        }
+        Task { await loadTrack(for: balloon) }
+    }
+
+    /// 曲を取ってから流す。取っている間に別の風船へ乗り換えていたら、何もしない
+    private func loadTrack(for balloon: Balloon) async {
+        isLoadingTrack = true
+        defer { isLoadingTrack = false }
+        let track = await tracks.track(id: balloon.trackID)
+        guard currentBalloonID == balloon.id else { return }
+        currentTrack = track
+        playback.play(track)
+    }
+
+    /// 曲の取得に失敗していたら、無音で待ちつつ取り直す
+    private func retryTrackIfNeeded() {
+        guard currentTrack == nil, !isLoadingTrack, let balloon = currentBalloon else { return }
+        Task { await loadTrack(for: balloon) }
     }
 }

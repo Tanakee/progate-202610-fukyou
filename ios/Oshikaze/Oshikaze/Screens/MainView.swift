@@ -9,6 +9,7 @@ struct MainView: View {
     )
     @AppStorage("isListening") private var isListening = false
     @State private var hasCentered = false
+    @State private var showsAccount = false
 
     var body: some View {
         Map(position: $position) {
@@ -28,6 +29,22 @@ struct MainView: View {
         .safeAreaInset(edge: .bottom) {
             PlaybackBar(isListening: $isListening)
                 .padding(.horizontal)
+        }
+        .overlay(alignment: .topLeading) {
+            Button {
+                showsAccount = true
+            } label: {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 36))
+                    .symbolRenderingMode(.hierarchical)
+                    .padding(8)
+                    .background(.regularMaterial, in: Circle())
+            }
+            .accessibilityLabel("自分の曲")
+            .padding(.leading)
+        }
+        .sheet(isPresented: $showsAccount) {
+            AccountSheet()
         }
         .overlay {
             if session.location.isDenied {
@@ -105,6 +122,7 @@ private struct PlaybackBar: View {
 
     private var title: String {
         if let track = session.currentTrack { return track.title }
+        if session.currentBalloonID != nil { return "曲を読み込んでいます" }
         return session.feed.balloons.isEmpty ? "近くに風船がありません" : "風船を探しています"
     }
 
