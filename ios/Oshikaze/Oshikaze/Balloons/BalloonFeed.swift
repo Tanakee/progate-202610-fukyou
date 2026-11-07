@@ -113,6 +113,9 @@ final class BalloonFeed {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(2))
                 guard let self, !Task.isCancelled, self.task === task else { return }
+                // つながるまでは URLSession のタイムアウトに任せる。接続中に打ち切ると、
+                // 初回のローカルネットワークの許可ダイアログなどで時間がかかったときにつながらなくなる
+                guard self.state == .subscribed else { continue }
                 if Date.now.timeIntervalSince(self.lastMessageAt ?? .distantPast) > Self.silenceLimit {
                     self.fail(task, reason: "pingが途切れた")
                     return
