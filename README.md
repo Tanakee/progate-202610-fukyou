@@ -84,3 +84,14 @@ API 専用の Rails なので、ビューは erb ではなく jbuilder（`app/vi
 ```sh
 node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-model-20261102-100000/candidate.json diagrams/erd-data-model-20261102-100000/data-model.html --quality showcase
 ```
+
+## 定期処理（ticker）と WebSocket
+
+`docker compose up` で、Web（`app`）とは別のコンテナ `ticker` が起動します。
+
+- 風データ：Open-Meteo から日本周辺の1度格子（837地点）の風（地上10m、m/s）を3時間ごとに取得し、`wind_grid` に保存します。無料枠の1分あたりの上限に収めるため、300地点ずつ1分あけて取得します
+- 風船：5秒ごとに飛行中の風船を風で動かし、`/ws` の `BalloonsChannel` へ `balloons.snapshot` を配信します
+- 速度の倍率は `compose.yaml` の `SPEED_SCALE` で変えられます（変えたら `docker compose up -d` で作り直す）
+- 定期処理は advisory lock で1プロセスだけが動きます
+
+ログは `docker compose logs -f ticker` で見られます。

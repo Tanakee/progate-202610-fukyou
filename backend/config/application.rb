@@ -24,6 +24,13 @@ module Backend
     # 1日の区切り（回収は1日1回）を日本時間の0時にする。DBには UTC で保存する
     config.time_zone = "Asia/Tokyo"
     config.i18n.default_locale = :ja
+
+    # 風船の速度の倍率。実際の風と等倍を初期値にし、デモでは早送りする
+    config.x.speed_scale = ENV.fetch("SPEED_SCALE", "1").to_f
+
+    config.action_cable.mount_path = "/ws"
+    # 接続元はブラウザではなく iOS アプリで、Origin ヘッダーが付かないため検査しない
+    config.action_cable.disable_request_forgery_protection = true
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Only loads a smaller set of middleware suitable for API only apps.
