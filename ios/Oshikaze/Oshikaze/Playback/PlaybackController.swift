@@ -28,6 +28,7 @@ final class PlaybackController {
 
     private static let fadeDuration = 1.5
     private static let fadeSteps = 15
+    private static let silenceURL = Bundle.main.url(forResource: "silence", withExtension: "mp3")!
 
     init() {
         observeSession()
@@ -78,7 +79,7 @@ final class PlaybackController {
     }
 
     private func makeItem(_ track: Track?) -> AVPlayerItem? {
-        AVPlayerItem(url: track?.audioURL ?? TrackCatalog.silenceURL)
+        AVPlayerItem(url: track?.mp3URL ?? Self.silenceURL)
     }
 
     private func fade(_ player: AVPlayer, to target: Float, completion: (() -> Void)? = nil) {
