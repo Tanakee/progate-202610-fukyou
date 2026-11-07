@@ -1,0 +1,16 @@
+ja:
+  activerecord:
+    models:
+      user: 利用者
+    attributes:
+      user:
+        email: メールアドレス
+        password: パスワード
+  errors:
+    format: "%{attribute}%{message}"
+    messages:
+      blank: を入力してください
+      invalid: の形式が正しくありません
+      taken: は登録済みです
+      too_short: は%{count}文字以上で入力してください
+      too_long: は%{count}文字以内で入力してください
