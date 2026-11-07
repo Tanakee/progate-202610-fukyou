@@ -57,11 +57,6 @@ struct MainView: View {
                 try? await Task.sleep(for: Self.myBalloonRefreshInterval)
             }
         }
-        .onChange(of: myBalloon.balloon?.id) { old, new in
-            // 飛ばした直後は、自分の風船へ地図を寄せる
-            guard old == nil, new != nil, let balloon = myBalloon.balloon, !showsLaunch else { return }
-            showMyBalloon(balloon)
-        }
         .overlay(alignment: .topLeading) {
             Button {
                 showsAccount = true
@@ -101,7 +96,8 @@ struct MainView: View {
         }
     }
 
-    /// 自分の風船へ地図を寄せる。配信の位置があればそちらを使う（/me/balloons より新しい）
+    /// 自分の風船へ地図を寄せる。地図の主役は利用者なので、ボタンを押したときだけ寄せる。
+    /// 配信の位置があればそちらを使う（/me/balloons より新しい）
     private func showMyBalloon(_ balloon: MyBalloon) {
         let coordinate = session.feed.balloons.first { $0.id == balloon.id }?.coordinate ?? balloon.coordinate
         withAnimation(.easeInOut(duration: 1.5)) {
