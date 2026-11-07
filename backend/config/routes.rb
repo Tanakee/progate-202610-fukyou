@@ -12,6 +12,16 @@ Rails.application.routes.draw do
     end
 
     resource :me, only: :show, controller: :me
-    resources :balloons, only: :create
+    namespace :me do
+      resources :balloons, only: :index
+    end
+
+    resources :balloons, only: :create do
+      scope module: :balloons do
+        resources :plays, only: :create
+        resource :collection, only: :create, path: "collect"
+        resource :pop, only: :create
+      end
+    end
   end
 end
