@@ -2,6 +2,9 @@
 
 推し風のBEが提供するAPIの一覧です。REST APIは15本、WebSocketイベントは4種類です。
 設計の背景は `design-document.pdf` を、処理の流れは `diagrams/index.html` を参照してください。
+リクエストとレスポンスの詳しい形は `backend/openapi/swagger.yml`、テーブルの定義は `diagrams/erd-data-model-20261102-100000/data-model.html` を参照してください。
+
+認証が「必要」なAPIは、ログインまたは新規登録で返る `token` を `Authorization: Bearer <token>` ヘッダーで送ります。サーバーはこの `token` から本人を特定するので、パスやボディに利用者IDは入れません。
 
 ## REST API
 
