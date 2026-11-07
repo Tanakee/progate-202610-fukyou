@@ -13,6 +13,8 @@ struct MainView: View {
     @State private var hasCentered = false
     @State private var showsAccount = false
     @State private var showsLaunch = false
+    @State private var confirmsCollect = false
+    @State private var collectMessage: String?
 
     /// 設計書の「前面にある間は30秒ごとに /me/balloons を読む」
     private static let myBalloonRefreshInterval: Duration = .seconds(30)
@@ -43,9 +45,25 @@ struct MainView: View {
                         showsLaunch = true
                     }
                 }
-                PlaybackBar(isListening: $isListening)
+                PlaybackBar(isListening: $isListening) {
+                    if auth.isSignedIn {
+                        confirmsCollect = true
+                    } else {
+                        showsAccount = true
+                    }
+                }
             }
             .padding(.horizontal)
+        }
+        .confirmationDialog("この曲を今日の1曲として回収しますか？", isPresented: $confirmsCollect, titleVisibility: .visible) {
+            Button("回収する") {
+                Task { await collect() }
+            }
+        } message: {
+            Text("回収は1日1回です。回収した風船はみんなの空から消え、お気に入りに残ります。")
+        }
+        .alert(collectMessage ?? "", isPresented: Binding(get: { collectMessage != nil }, set: { if !$0 { collectMessage = nil } })) {
+            Button("OK") {}
         }
         .sheet(isPresented: $showsLaunch) {
             LaunchSheet()
@@ -93,6 +111,16 @@ struct MainView: View {
         .onChange(of: session.playback.isListening) { _, listening in
             // イヤホンが外れたときやロック画面の操作を、ボタンの表示にも反映する
             isListening = listening
+        }
+    }
+
+    private func collect() async {
+        do {
+            if let favorite = try await session.collectCurrent() {
+                collectMessage = "「\(favorite.track.title)」を回収しました"
+            }
+        } catch {
+            collectMessage = error.localizedDescription
         }
     }
 
@@ -155,6 +183,7 @@ private struct BalloonMark: View {
 private struct PlaybackBar: View {
     @Environment(ListeningSession.self) private var session
     @Binding var isListening: Bool
+    let onCollect: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -168,6 +197,12 @@ private struct PlaybackBar: View {
                     .lineLimit(1)
             }
             Spacer()
+            Button(action: onCollect) {
+                Image(systemName: "heart.circle")
+                    .font(.system(size: 36))
+            }
+            .disabled(session.currentTrack == nil)
+            .accessibilityLabel("この曲を回収する")
             Button {
                 isListening.toggle()
             } label: {
