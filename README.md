@@ -98,3 +98,5 @@ node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-mod
 - 速度の倍率は `compose.yaml` の `SPEED_SCALE` で変えられます（変えたら `docker compose up -d` で作り直す）
 - どちらの定期処理も advisory lock で1プロセスだけが動きます。落ちたら compose が再起動します
 - ログはエラーだけが出ます（`docker compose logs -f wind balloons`）。SQL などの詳しいログは `backend/log/development.log` にあります
+
+届くデータは、`docs/websocket-viewer.html` をブラウザで開くと確かめられます。`/ws` に接続して `BalloonsChannel` を購読し、届いたメッセージの生データ、最新の snapshot の表、地図上の風船を表示します。

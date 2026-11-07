@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebSocket ビューアー</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#f7f6f2;--surface:#fff;--sunken:#efede6;--text:#22241f;--muted:#62655c;--line:#dcd9cf;--accent:#1f5f8b;--ok:#2f7d4f;--warn:#b26a00;--err:#b3261e;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17191a;--surface:#202325;--sunken:#2a2d2f;--text:#ecebe6;--muted:#a5a79f;--line:#3a3e40;--accent:#7dbbe6;--ok:#6cc58f;--warn:#e0a640;--err:#f08a82;}}
+:root[data-theme="dark"]{--bg:#17191a;--surface:#202325;--sunken:#2a2d2f;--text:#ecebe6;--muted:#a5a79f;--line:#3a3e40;--accent:#7dbbe6;--ok:#6cc58f;--warn:#e0a640;--err:#f08a82;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;line-height:1.6;font-size:15px}
+main{max-width:1200px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.5rem;margin:0 0 4px}
+h2{font-size:1.05rem;margin:0 0 10px}
+p.lead{color:var(--muted);margin:0 0 20px}
+code,pre,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px;min-width:0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar input[type=text]{flex:1 1 260px;min-width:0;padding:8px 10px;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:6px}
+button{font:inherit;padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+label.check{display:inline-flex;gap:6px;align-items:center;color:var(--muted);font-size:.9rem}
+.status{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.err{background:var(--err)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:14px}
+.stats div{background:var(--surface);padding:10px 12px;min-width:0}
+.stats b{display:block;font-size:1.15rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stats span{color:var(--muted);font-size:.8rem}
+.stats b.mono{font-size:.9rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+#map{height:420px;border-radius:6px;border:1px solid var(--line)}
+.scroll{overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:.78rem;white-space:nowrap}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);padding:12px 0}
+pre{margin:0;background:var(--sunken);border-radius:6px;padding:12px;overflow:auto;max-height:360px}
+#log{max-height:420px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.entry{border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.entry summary{cursor:pointer;padding:6px 10px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.entry pre{border-radius:0 0 6px 6px;max-height:240px}
+.tag{font-size:.75rem;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--sunken)}
+.tag.message{background:var(--accent);color:#fff}
+.muted{color:var(--muted)}
+ol.help{margin:0;padding-left:1.3em;color:var(--muted)}
+ol.help li{margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>WebSocket ビューアー</h1>
+  <p class="lead">BE の <code>/ws</code> に接続して <code>BalloonsChannel</code> を購読し、届いたデータをそのまま表示します。ローカルの <code>docker compose up</code> が動いている状態で開いてください。</p>
+
+  <section class="card">
+    <div class="bar">
+      <input type="text" id="url" value="ws://localhost:3000/ws" aria-label="WebSocket の URL">
+      <button class="primary" id="connect">接続</button>
+      <button id="disconnect" disabled>切断</button>
+      <label class="check"><input type="checkbox" id="show-ping"> ping も記録する</label>
+      <span class="status"><span class="dot" id="dot"></span><span id="state">未接続</span></span>
+    </div>
+    <div class="stats">
+      <div><span>受け取った snapshot</span><b id="count">0</b></div>
+      <div><span>最新の seq</span><b class="mono" id="seq">—</b></div>
+      <div><span>server_time</span><b class="mono" id="server-time">—</b></div>
+      <div><span>前回からの間隔</span><b id="interval">—</b></div>
+      <div><span>speed_scale</span><b id="scale">—</b></div>
+      <div><span>飛行中の風船</span><b id="balloon-count">—</b></div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>地図</h2>
+      <div id="map"></div>
+    </section>
+    <section class="card">
+      <h2>最新の <code>balloons.snapshot</code></h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>id</th><th>track_id</th><th>lat</th><th>lng</th><th>ve (m/s)</th><th>vn (m/s)</th><th>前回からの移動</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <p class="empty" id="empty">まだ snapshot が届いていません。</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>届いたメッセージ（新しい順・最大100件）</h2>
+      <div id="log"></div>
+    </section>
+    <section class="card">
+      <h2>最新のメッセージの生データ</h2>
+      <pre id="raw">—</pre>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>風船がないとき</h2>
+    <ol class="help">
+      <li>風船を飛ばす API はまだないので、rails console から確認用の風船を作ります。
+        <pre>docker compose exec app ruby bin/rails runner '
+u = User.find_or_create_by!(email: "viewer@example.com") { _1.password = "password123" }
+t = Track.create!(user: u, title: "確認用", artist: "確認用", mp3_url: "https://example.com/a.mp3")
+Balloon.create!(user: u, track: t, origin_label: "大阪市", origin_lat: 34.7, origin_lng: 135.5,
+                lat: 34.7, lng: 135.5, moved_at: Time.current, launched_at: Time.current)'</pre>
+      </li>
+      <li>速く動く様子を見たいときは、<code>compose.yaml</code> の <code>SPEED_SCALE</code> を大きくして <code>docker compose up -d</code> します。</li>
+      <li>片付けるときは次を実行します。
+        <pre>docker compose exec app ruby bin/rails runner '
+u = User.find_by!(email: "viewer@example.com")
+Balloon.where(user: u).delete_all; Track.where(user: u).delete_all; u.destroy!'</pre>
+      </li>
+    </ol>
+  </section>
+</main>
+
+<script>
+const IDENTIFIER = JSON.stringify({ channel: "BalloonsChannel" });
+const METERS_PER_DEGREE = 111320;
+const $ = (id) => document.getElementById(id);
+
+const map = L.map("map").setView([36.5, 136], 5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 18,
+  attribution: "&copy; OpenStreetMap contributors",
+}).addTo(map);
+const markers = new Map();
+
+let socket = null;
+let snapshotCount = 0;
+let lastReceivedAt = null;
+let previousPositions = new Map();
+
+function setState(text, level) {
+  $("state").textContent = text;
+  $("dot").className = "dot " + (level || "");
+}
+
+function addLog(kind, data) {
+  const entry = document.createElement("details");
+  entry.className = "entry";
+  const summary = document.createElement("summary");
+  const tag = document.createElement("span");
+  tag.className = "tag " + (kind === "message" ? "message" : "");
+  tag.textContent = kind;
+  const time = document.createElement("span");
+  time.className = "muted mono";
+  time.textContent = new Date().toLocaleTimeString("ja-JP", { hour12: false }) + "." + String(Date.now() % 1000).padStart(3, "0");
+  const note = document.createElement("span");
+  note.className = "muted";
+  if (data.message?.event) note.textContent = data.message.event + "（" + data.message.balloons.length + "個）";
+  summary.append(tag, time, note);
+  const pre = document.createElement("pre");
+  pre.textContent = JSON.stringify(data, null, 2);
+  entry.append(summary, pre);
+  $("log").prepend(entry);
+  while ($("log").children.length > 100) $("log").lastChild.remove();
+  $("raw").textContent = JSON.stringify(data, null, 2);
+}
+
+function distanceMeters(from, to) {
+  const north = (to.lat - from.lat) * METERS_PER_DEGREE;
+  const east = (to.lng - from.lng) * METERS_PER_DEGREE * Math.cos(from.lat * Math.PI / 180);
+  return Math.hypot(north, east);
+}
+
+function showSnapshot(snapshot) {
+  const now = Date.now();
+  snapshotCount += 1;
+  $("count").textContent = snapshotCount;
+  $("seq").textContent = snapshot.seq;
+  $("server-time").textContent = snapshot.server_time;
+  $("interval").textContent = lastReceivedAt ? ((now - lastReceivedAt) / 1000).toFixed(2) + " 秒" : "—";
+  $("scale").textContent = snapshot.speed_scale;
+  $("balloon-count").textContent = snapshot.balloons.length;
+  lastReceivedAt = now;
+
+  $("rows").replaceChildren(...snapshot.balloons.map((balloon) => {
+    const previous = previousPositions.get(balloon.id);
+    const moved = previous ? distanceMeters(previous, balloon).toFixed(1) + " m" : "—";
+    const row = document.createElement("tr");
+    [balloon.id, balloon.track_id, balloon.lat.toFixed(6), balloon.lng.toFixed(6), balloon.ve.toFixed(2), balloon.vn.toFixed(2), moved].forEach((value, i) => {
+      const cell = document.createElement("td");
+      if (i > 0) cell.className = "num";
+      cell.textContent = value;
+      row.append(cell);
+    });
+    return row;
+  }));
+  $("empty").hidden = snapshot.balloons.length > 0;
+
+  const ids = new Set(snapshot.balloons.map((balloon) => balloon.id));
+  for (const [id, marker] of markers) {
+    if (!ids.has(id)) { marker.remove(); markers.delete(id); }
+  }
+  for (const balloon of snapshot.balloons) {
+    const position = [balloon.lat, balloon.lng];
+    const label = `風船 ${balloon.id}（曲 ${balloon.track_id}）<br>ve ${balloon.ve.toFixed(2)} / vn ${balloon.vn.toFixed(2)} m/s`;
+    if (markers.has(balloon.id)) markers.get(balloon.id).setLatLng(position).setPopupContent(label);
+    else markers.set(balloon.id, L.circleMarker(position, { radius: 7, color: "#1f5f8b", fillOpacity: 0.8 }).bindPopup(label).addTo(map));
+  }
+
+  previousPositions = new Map(snapshot.balloons.map((balloon) => [balloon.id, { lat: balloon.lat, lng: balloon.lng }]));
+}
+
+function connect() {
+  setState("接続中…", "warn");
+  socket = new WebSocket($("url").value);
+  $("connect").disabled = true;
+  $("disconnect").disabled = false;
+
+  socket.onopen = () => {
+    setState("接続済み（購読を送信）", "warn");
+    socket.send(JSON.stringify({ command: "subscribe", identifier: IDENTIFIER }));
+  };
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "ping") {
+      if ($("show-ping").checked) addLog("ping", data);
+      return;
+    }
+    if (data.type === "confirm_subscription") setState("購読中", "ok");
+    addLog(data.type || "message", data);
+    if (data.message?.event === "balloons.snapshot") showSnapshot(data.message);
+  };
+  socket.onerror = () => setState("エラー（BE が起動しているか確認）", "err");
+  socket.onclose = () => {
+    setState("切断", "");
+    $("connect").disabled = false;
+    $("disconnect").disabled = true;
+  };
+}
+
+$("connect").addEventListener("click", connect);
+$("disconnect").addEventListener("click", () => socket?.close());
+connect();
+</script>
+</body>
+</html>
