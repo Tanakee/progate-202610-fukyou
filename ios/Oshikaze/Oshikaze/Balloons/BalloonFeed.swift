@@ -85,6 +85,7 @@ final class BalloonFeed {
         let task = URLSession.shared.webSocketTask(with: request)
         self.task = task
         task.resume()
+        logger.info("接続を開始: \(self.url.absoluteString, privacy: .public)")
         receive(on: task)
         startWatchdog(for: task)
     }
@@ -150,8 +151,10 @@ final class BalloonFeed {
         let type = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["type"] as? String
         switch type {
         case "welcome":
+            logger.info("welcome を受信。購読する")
             subscribe(on: task)
         case "confirm_subscription":
+            logger.info("購読済み")
             retryCount = 0
             state = .subscribed
         case "ping", "disconnect", "reject_subscription":
