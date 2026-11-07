@@ -80,9 +80,11 @@ final class BalloonSimulator {
     private func apply(_ snapshot: SnapshotClient.Snapshot) {
         speedScale = snapshot.speed_scale
         lastSnapshotAt = .now
-        // 届いた位置を正として置き換える。次の配信までは ve / vn で進める
-        balloons = snapshot.balloons.map { balloon in
-            Balloon(id: balloon.id,
+        // 届いた位置を正として置き換える。次の配信までは ve / vn で進める。
+        // 地球上にない座標は地図に置けないので捨てる（BEで旅の終わりを作る前は、日本の外へ流れ続ける）
+        balloons = snapshot.balloons.compactMap { balloon in
+            guard CLLocationCoordinate2DIsValid(CLLocationCoordinate2D(latitude: balloon.lat, longitude: balloon.lng)) else { return nil }
+            return Balloon(id: balloon.id,
                     title: Self.titles[balloon.track_id % Self.titles.count],
                     color: Self.colors[balloon.id % Self.colors.count],
                     coordinate: CLLocationCoordinate2D(latitude: balloon.lat, longitude: balloon.lng),
