@@ -4,6 +4,7 @@ import SwiftUI
 struct MyTracksView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(TrackStore.self) private var tracks
+    @Environment(MyBalloonStore.self) private var myBalloon
     @State private var youtubeURL = ""
     @State private var isImporting = false
     @State private var errorMessage: String?
@@ -59,6 +60,7 @@ struct MyTracksView: View {
                     Task {
                         await auth.logOut()
                         tracks.clearMyTracks()
+                        myBalloon.clear()
                     }
                 }
             }

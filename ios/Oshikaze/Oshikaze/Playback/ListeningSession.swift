@@ -15,19 +15,36 @@ final class ListeningSession {
     let location: LocationProvider
     let playback: PlaybackController
     let tracks: TrackStore
+    let auth: AuthStore
+    let myBalloon: MyBalloonStore
 
     private var loop: Task<Void, Never>?
     private var decidedAt = Date.distantPast
     private var isLoadingTrack = false
+    /// 流している風船を実際に再生できた秒数
+    private var playedSeconds = 0
+    /// 回数を送り終えた風船。同じ人は同じ風船で1回まで
+    private var reportedBalloonIDs: Set<Int> = []
+    private var isReporting = false
 
     /// 設計書の「切り替えの判定は30秒に1回」
     private static let decisionInterval: TimeInterval = 30
+    /// 設計書の「再生開始から5秒で1回」
+    private static let secondsToCountPlay = 5
 
-    init(feed: BalloonFeed, location: LocationProvider, playback: PlaybackController, tracks: TrackStore) {
+    init(feed: BalloonFeed, location: LocationProvider, playback: PlaybackController, tracks: TrackStore,
+         auth: AuthStore, myBalloon: MyBalloonStore) {
         self.feed = feed
         self.location = location
         self.playback = playback
         self.tracks = tracks
+        self.auth = auth
+        self.myBalloon = myBalloon
+    }
+
+    /// 流さない風船。自分の風船は自分には流さない
+    private var excludedBalloonIDs: Set<Int> {
+        myBalloon.balloon.map { [$0.id] } ?? []
     }
 
     var currentBalloon: Balloon? {
@@ -45,6 +62,7 @@ final class ListeningSession {
         loop = Task { [weak self] in
             while !Task.isCancelled {
                 self?.decideIfNeeded()
+                self?.countPlay()
                 try? await Task.sleep(for: .seconds(1))
             }
         }
@@ -53,16 +71,19 @@ final class ListeningSession {
     private func decideIfNeeded() {
         retryTrackIfNeeded()
         guard let here = location.coordinate else { return }
-        let currentIsGone = currentBalloonID != nil && currentBalloon == nil
+        // 流していた風船が消えた、または自分で飛ばした風船だったときは、30秒を待たずに選び直す
+        let currentIsGone = currentBalloonID.map { id in currentBalloon == nil || excludedBalloonIDs.contains(id) } ?? false
         let isDue = Date.now.timeIntervalSince(decidedAt) >= Self.decisionInterval
-        // 何も流していない、または流していた風船が消えたときは、30秒を待たずに選び直す
         guard currentBalloonID == nil || currentIsGone || isDue else { return }
 
         decidedAt = .now
-        let picked = NearestBalloonPicker.pick(from: feed.balloons, at: here, current: currentIsGone ? nil : currentBalloonID)
+        let picked = NearestBalloonPicker.pick(from: feed.balloons, at: here,
+                                               current: currentIsGone ? nil : currentBalloonID,
+                                               excluded: excludedBalloonIDs)
         guard picked != currentBalloonID || currentIsGone else { return }
         currentBalloonID = picked
         currentTrack = nil
+        playedSeconds = 0
         guard let balloon = currentBalloon else {
             playback.play(nil)
             return
@@ -84,5 +105,24 @@ final class ListeningSession {
     private func retryTrackIfNeeded() {
         guard currentTrack == nil, !isLoadingTrack, let balloon = currentBalloon else { return }
         Task { await loadTrack(for: balloon) }
+    }
+
+    /// 実際に鳴っている秒数を数え、5秒になったら回数を送る。失敗したら次の秒に送り直す
+    private func countPlay() {
+        guard let balloonID = currentBalloonID, let track = currentTrack, playback.isPlaying(track) else { return }
+        playedSeconds += 1
+        guard playedSeconds >= Self.secondsToCountPlay,
+              !reportedBalloonIDs.contains(balloonID), !isReporting, auth.isSignedIn else { return }
+        isReporting = true
+        Task {
+            defer { isReporting = false }
+            do {
+                // 応答は `{play_count}` だが、聴く側では使わない
+                try await auth.client.send(.post, "balloons/\(balloonID)/plays")
+                reportedBalloonIDs.insert(balloonID)
+            } catch {
+                auth.handle(error)
+            }
+        }
     }
 }
