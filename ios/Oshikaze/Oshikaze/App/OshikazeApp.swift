@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct OshikazeApp: App {
@@ -7,8 +8,10 @@ struct OshikazeApp: App {
     @State private var tracks: TrackStore
     @State private var myBalloon: MyBalloonStore
     @State private var session: ListeningSession
+    private let notificationDelegate = NotificationDelegate()
 
     init() {
+        UNUserNotificationCenter.current().delegate = notificationDelegate
         let auth = AuthStore()
         let tracks = TrackStore()
         let myBalloon = MyBalloonStore()

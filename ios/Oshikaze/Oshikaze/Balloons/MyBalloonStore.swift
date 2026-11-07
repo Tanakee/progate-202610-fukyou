@@ -39,10 +39,21 @@ final class MyBalloonStore {
         }
         do {
             let balloons: [MyBalloon] = try await auth.client.send(.get, "me/balloons")
+            let previous = balloon
             balloon = balloons.first
+            // 飛んでいた風船が一覧から消えたら、回収されたか旅が終わった。
+            // 本人用チャンネル（balloon.collected / balloon.ended）ができるまでは、この差で気づく
+            if let previous, balloon?.id != previous.id {
+                await notifyEnded(previous, with: auth)
+            }
         } catch {
             auth.handle(error)
         }
+    }
+
+    private func notifyEnded(_ balloon: MyBalloon, with auth: AuthStore) async {
+        let journeys: [Journey] = (try? await auth.client.send(.get, "me/journeys")) ?? []
+        Notifier.postJourneyEnded(balloon, journey: journeys.first { $0.balloonID == balloon.id })
     }
 
     /// 現在地をぼかし、地名を付けて飛ばす。生の現在地はサーバーへ送らない

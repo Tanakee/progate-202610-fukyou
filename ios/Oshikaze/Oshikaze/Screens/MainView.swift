@@ -69,7 +69,9 @@ struct MainView: View {
             LaunchSheet()
         }
         .task(id: auth.token) {
-            // ログインとログアウトのたびに読み直し、その後は30秒ごとに回数を更新する
+            // ログインとログアウトのたびに読み直し、その後は30秒ごとに回数を更新する。
+            // 先に空にするのは、別の人でログインし直したときに、前の人の風船が消えたと通知しないため
+            myBalloon.clear()
             while !Task.isCancelled {
                 await myBalloon.refresh(with: auth)
                 try? await Task.sleep(for: Self.myBalloonRefreshInterval)
@@ -107,6 +109,9 @@ struct MainView: View {
         }
         .onChange(of: isListening, initial: true) { _, listening in
             session.playback.setListening(listening)
+            if listening {
+                Task { await Notifier.requestAuthorization() }
+            }
         }
         .onChange(of: session.playback.isListening) { _, listening in
             // イヤホンが外れたときやロック画面の操作を、ボタンの表示にも反映する
