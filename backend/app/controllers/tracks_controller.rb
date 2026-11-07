@@ -16,57 +16,43 @@ class TracksController < ApplicationController
   end
 
   def create
-    attributes = params.permit(:title, :artist)
-    file = params[:file]
+    input = params.permit(:youtube_url)
+    info = YoutubeVideoInfo.fetch(input[:youtube_url])
 
-    if attributes[:title].blank? || attributes[:artist].blank?
-      return render_error :unprocessable_entity,
-        code: "invalid_track",
-        message: "曲名とアーティスト名を入力してください"
+    YoutubeAudioDownloader.with_audio(info) do |path|
+      File.open(path, "rb") do |file|
+        blob = ActiveStorage::Blob.build_after_unfurling(
+          io: file,
+          filename: "#{info.fetch('id')}.mp3",
+          content_type: "audio/mpeg",
+          identify: false
+        )
+
+        blob.save!
+        file.rewind
+        blob.upload_without_unfurling(file)
+
+        @track = current_user.tracks.new(
+          title: info["track"].presence || info["title"].presence || "タイトル不明",
+          artist: info["artist"].presence || info["uploader"].presence || "不明",
+          mp3_url: rails_blob_url(blob, disposition: "inline")
+        )
+
+        @track.audio.attach(blob)
+        @track.save!
+      ensure
+        blob.purge if blob&.persisted? && !@track&.persisted?
+      end
     end
-
-    unless file.is_a?(ActionDispatch::Http::UploadedFile)
-      return render_error :unprocessable_entity,
-        code: "invalid_file",
-        message: "MP3ファイルを選んでください"
-    end
-
-    unless file.size.positive? && file.size <= 20.megabytes
-      return render_error :unprocessable_entity,
-        code: "invalid_file",
-        message: "空でない20MB以内のMP3ファイルを選んでください"
-    end
-
-    content_type = Marcel::MimeType.for(file.tempfile)
-    file.tempfile.rewind
-
-    unless content_type == "audio/mpeg"
-      return render_error :unprocessable_entity,
-        code: "invalid_file",
-        message: "MP3ファイルを選んでください"
-    end
-
-    blob = ActiveStorage::Blob.build_after_unfurling(
-      io: file.tempfile,
-      filename: file.original_filename,
-      content_type: content_type,
-      identify: false
-    )
-    blob.save!
-    file.tempfile.rewind
-    blob.upload_without_unfurling(file.tempfile)
-
-    @track = current_user.tracks.new(attributes)
-    @track.audio.attach(blob)
-    @track.mp3_url = rails_blob_url(blob, disposition: "inline")
-    @track.save!
 
     render :show, status: :created
+  rescue YoutubeVideoInfo::Error, YoutubeAudioDownloader::Error => error
+    render_error :unprocessable_entity,
+      code: "youtube_import_failed",
+      message: error.message
   rescue ActiveRecord::RecordInvalid
     render_error :unprocessable_entity,
       code: "invalid_track",
       message: "曲情報を保存できませんでした"
-  ensure
-    blob.purge if blob&.persisted? && !@track&.persisted?
   end
 end
