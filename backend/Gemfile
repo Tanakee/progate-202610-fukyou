@@ -50,4 +50,10 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Active StorageでMinIO・LocalStackなどのS3互換ストレージにファイルを保存する
+  gem "aws-sdk-s3", require: false
+
+  # Active StorageでS3互換ストレージにファイルを保存する
+  gem "aws-sdk-s3", require: false
 end
