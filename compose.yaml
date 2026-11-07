@@ -51,6 +51,27 @@ services:
     command: ["ruby", "bin/rails", "balloons:move"]
     restart: unless-stopped
 
+  realtime:
+    image: golang:1.25
+    working_dir: /app
+    volumes:
+      - ./realtime:/app
+      - go_modules:/go/pkg/mod
+    environment:
+      PGHOST: db
+      PGUSER: app
+      PGPASSWORD: local_dev_password
+      PGDATABASE: fukyou_development
+      SPEED_SCALE: "1"
+    ports:
+      - "127.0.0.1:4000:4000/udp"
+    # テーブルを作るのは app の db:prepare なので、それを待つ
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["go", "run", "."]
+    restart: unless-stopped
+
   db:
     image: postgres:17
     environment:
@@ -75,4 +96,5 @@ services:
 
 volumes:
   gems:
+  go_modules:
   postgres_data:
