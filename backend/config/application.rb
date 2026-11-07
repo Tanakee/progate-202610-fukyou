@@ -30,5 +30,8 @@ module Backend
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # routes の defaults format: :json で全リクエストに format が付き、permit のたびに警告が出るのを防ぐ
+    config.action_controller.always_permitted_parameters = %w[controller action format]
   end
 end

@@ -15,13 +15,12 @@ end
 module ActionDispatch
   class IntegrationTest
     private
+      def auth_header(token)
+        { "Authorization" => "Bearer #{token}" }
+      end
 
-    def auth_header(token)
-      { "Authorization" => "Bearer #{token}" }
-    end
-
-    def json
-      response.parsed_body
-    end
+      def json
+        response.parsed_body
+      end
   end
 end

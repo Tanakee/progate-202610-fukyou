@@ -1,4 +1,3 @@
-# 平文の token は "alice-token"
 alice_token:
   user: alice
   token_digest: <%= AuthToken.digest("alice-token") %>

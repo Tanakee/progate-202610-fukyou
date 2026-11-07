@@ -63,6 +63,19 @@ class SignupTest < ActionDispatch::IntegrationTest
     post "/auth/signup", params: { email: "bob@example.com" }, as: :json
 
     assert_response :unprocessable_content
-    assert_equal "パスワードは8文字以上で入力してください", json["message"]
+    assert_equal "パスワードを入力してください", json["message"]
+  end
+
+  test "空白だけのパスワードなら 422" do
+    post "/auth/signup", params: { email: "bob@example.com", password: "        " }, as: :json
+
+    assert_response :unprocessable_content
+    assert_equal "パスワードを入力してください", json["message"]
+  end
+
+  test "数値のパスワードは文字列として扱う" do
+    post "/auth/signup", params: { email: "bob@example.com", password: 12345678 }, as: :json
+
+    assert_response :created
   end
 end
