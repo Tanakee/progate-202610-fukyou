@@ -1,0 +1,48 @@
+name: Oshikaze
+options:
+  deploymentTarget:
+    iOS: "18.0"
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+targets:
+  Oshikaze:
+    type: application
+    platform: iOS
+    sources:
+      - Oshikaze
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: Oshikaze/Info.plist
+      properties:
+        CFBundleDisplayName: 推し風
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIBackgroundModes:
+          - audio
+        NSLocationWhenInUseUsageDescription: 近くを漂う風船の曲を流すために、現在地を使います。現在地はサーバーへ送りません
+        NSLocalNetworkUsageDescription: 手元のMacで動かしているサーバーに接続します
+        # 手元のBEへ http / ws で接続するため。本番のBEがhttpsになったら外す
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        APIBaseURL: $(API_BASE_URL)
+    scheme:
+      testTargets:
+        - OshikazeTests
+  OshikazeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - OshikazeTests
+    dependencies:
+      - target: Oshikaze
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
