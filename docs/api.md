@@ -2,6 +2,9 @@
 
 推し風のBEが提供するAPIの一覧です。REST APIは15本、WebSocketイベントは4種類です。
 設計の背景は `design-document.pdf` を、処理の流れは `diagrams/index.html` を参照してください。
+リクエストとレスポンスの詳しい形は `backend/openapi/swagger.yml`、テーブルの定義は `diagrams/erd-data-model-20261102-100000/data-model.html` を参照してください。
+
+認証が「必要」なAPIは、ログインまたは新規登録で返る `token` を `Authorization: Bearer <token>` ヘッダーで送ります。サーバーはこの `token` から本人を特定するので、パスやボディに利用者IDは入れません。
 
 ## REST API
 
@@ -47,6 +50,10 @@
 | API | 応答 | 条件 |
 | --- | --- | --- |
 | 認証が必要なAPI | 401 | トークンがない、または無効 |
+| `POST /auth/signup` | 409 | メールアドレスが登録済み（大文字と小文字は区別しない） |
+| `POST /auth/signup` | 422 | メールアドレスの形式が正しくない、またはパスワードが8〜128文字ではない |
+| `POST /auth/login` | 401 | メールアドレスまたはパスワードが違う |
+| `POST /auth/login` | 429 | 同じ接続元から3分間に10回を超えてログインを試みた |
 | `POST /tracks` | 422 | mp3ではない、または20MBを超えている |
 | `POST /balloons` | 403 | 他の人の曲を飛ばそうとした |
 | `POST /balloons` | 409 | 飛行中の風船がある。アプリは `/me/balloons` を読み直す |
@@ -60,7 +67,7 @@
 
 ## WebSocket `/ws`
 
-Action Cableで提供する、サーバーから端末への配信専用の接続です。接続は匿名で許可し、全員向けのチャンネルと、トークンが必要な本人用チャンネルに分けます。ログイン後とログアウト後は再接続します。
+Action Cableで提供する、サーバーから端末への配信専用の接続です。配信には Redis を使い、風船を動かす定期処理のコンテナ（`balloons`）から全端末へ届けます。接続は匿名で許可し、全員向けのチャンネルと、トークンが必要な本人用チャンネルに分けます。ログイン後とログアウト後は再接続します。
 
 | イベント | チャンネル | 届く相手 | タイミング |
 | --- | --- | --- | --- |
@@ -73,13 +80,16 @@ Action Cableで提供する、サーバーから端末への配信専用の接�
 
 ```json
 {
-  "seq": 1,
+  "event": "balloons.snapshot",
+  "seq": 1794016905242,
   "server_time": "...",
   "speed_scale": 1,
   "balloons": [
-    { "id": "...", "track_id": "...", "lat": 0, "lng": 0, "ve": 0, "vn": 0 }
+    { "id": 1, "track_id": 7, "lat": 34.7, "lng": 135.5, "ve": 2.12, "vn": -4.01 }
   ]
 }
 ```
 
-`balloons.snapshot` が地図の状態の正で、新しい風船も次の配信で届きます。`owner_id` は載せません。
+全員向けチャンネルは `BalloonsChannel` です（`{"command":"subscribe","identifier":"{\"channel\":\"BalloonsChannel\"}"}` で購読）。同じチャンネルに複数のイベントを流すため、`event` で種類を見分けます。`seq` は送った時刻のミリ秒で、大きいほど新しい配信です。`ve` / `vn` は東向き・北向きの風の速さ（m/s、`speed_scale` を掛ける前）です。
+
+`balloons.snapshot` が地図の状態の正で、新しい風船も次の配信で届きます。飛ばした人（`user_id`）は載せません。

@@ -1,16 +1,25 @@
+x-rails: &rails
+  image: ruby:3.4
+  working_dir: /app
+  volumes:
+    - ./backend:/app
+    - gems:/usr/local/bundle
+  environment:
+    DB_HOST: db
+    DB_USERNAME: app
+    DB_PASSWORD: local_dev_password
+    REDIS_URL: redis://redis:6379/1
+    SPEED_SCALE: "1"
+
 services:
   app:
-    image: ruby:3.4
-    working_dir: /app
-    volumes:
-      - ./backend:/app
-      - gems:/usr/local/bundle
-    environment:
-      DATABASE_URL: "postgresql://app:local_dev_password@db:5432/fukyou_development"
+    <<: *rails
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     command:
       - bash
@@ -19,6 +28,28 @@ services:
         bundle install &&
         ruby bin/rails db:prepare &&
         exec ruby bin/rails server -b 0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:3000/up"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  wind:
+    <<: *rails
+    # gem のインストールと DB の準備は app に任せる。同じボリュームへ同時にインストールすると壊れるため
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["ruby", "bin/rails", "wind:fetch"]
+    restart: unless-stopped
+
+  balloons:
+    <<: *rails
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["ruby", "bin/rails", "balloons:move"]
+    restart: unless-stopped
 
   db:
     image: postgres:17
@@ -30,6 +61,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "app", "-d", "fukyou_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10

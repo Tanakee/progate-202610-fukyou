@@ -1,0 +1,5 @@
+alice_song:
+  user: alice
+  title: 風の通り道
+  artist: 推しバンド
+  mp3_url: https://storage.example.com/tracks/alice_song.mp3
