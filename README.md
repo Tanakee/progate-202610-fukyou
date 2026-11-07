@@ -84,3 +84,24 @@ API 専用の Rails なので、ビューは erb ではなく jbuilder（`app/vi
 ```sh
 node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-model-20261102-100000/candidate.json diagrams/erd-data-model-20261102-100000/data-model.html --quality showcase
 ```
+
+## 定期処理と WebSocket
+
+`docker compose up` で、Web（`app`）とは別に2つの定期処理のコンテナが起動します。
+
+| コンテナ | rake タスク | 内容 |
+| --- | --- | --- |
+| `wind` | `wind:fetch` | Open-Meteo から、日本周辺の1度格子（837地点）の風（地上10m、m/s）を、取得がいちばん古い100地点ずつ20分ごとに取得して `wind_grid` に保存する。一周は約3時間。まだ一度も取得していない地点があるうちは1分ごとに取得する |
+| `balloons` | `balloons:move` | 保存済みの風データで、飛行中の風船を5秒ごとに動かし、`/ws` の `BalloonsChannel` へ `balloons.snapshot` を配信する。日本の排他的経済水域（EEZ）の外へ出た風船は割れる（`status` が `lost` になる） |
+
+- Open-Meteo の無料枠は地点の数で数え、1分に600、1時間に5,000、1日に10,000までです。20分ごとに100地点なら1日7,200で収まります
+- 速度の倍率は `compose.yaml` の `SPEED_SCALE` で変えられます（変えたら `docker compose up -d` で作り直す）
+- `wind_grid` には初期データとして、2026年11月7日の Open-Meteo の風（`backend/db/seeds/wind_grid.json`、CC BY 4.0）が入ります。DB を新しく作ると `db:prepare` で自動で入り、既存の DB には `docker compose exec app ruby bin/rails db:seed` で入れられます。初期データは日時を古くしてあるので、実際の予報を取得した地点から順に置き換わります
+- どちらの定期処理も advisory lock で1プロセスだけが動きます。落ちたら compose が再起動します
+- ログはエラーだけが出ます（`docker compose logs -f wind balloons`）。SQL などの詳しいログは `backend/log/development.log` にあります
+
+届くデータは、`docs/websocket-viewer.html` をブラウザで開くと確かめられます。`/ws` に接続して `BalloonsChannel` を購読し、届いたメッセージの生データ、最新の snapshot の表、地図上の風船を表示します。
+
+### 日本の排他的経済水域のデータ
+
+`backend/config/japan_eez.json` は、[Marine Regions](https://www.marineregions.org/) の Maritime Boundaries and Exclusive Economic Zones（200NM）version 12（CC BY 4.0）から作りました。日本の EEZ に加え、北方領土・尖閣諸島・竹島周辺の主張の重なる海域と、日韓の共同開発区域を含みます。EEZ の形は陸地が穴になっているので外側の輪だけを使い（陸地も中に含める）、0.02度（約2 km）で間引いています。

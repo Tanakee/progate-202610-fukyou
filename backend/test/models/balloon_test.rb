@@ -1,0 +1,58 @@
+require "test_helper"
+
+class BalloonTest < ActiveSupport::TestCase
+  WEST_WIND = WindGrid::POINTS.to_h { [ _1, [ 10.0, 0.0 ] ] }
+
+  test "飛行中の風船を、前回からの経過時間だけ風で進める" do
+    balloon = balloons(:flying)
+
+    Balloon.move_flying!(wind: WEST_WIND, speed_scale: 1, now: balloon.moved_at + 100.seconds)
+
+    balloon.reload
+    meters_east = (balloon.lng - 130.5) * Balloon::METERS_PER_DEGREE * Math.cos(33.5 * Math::PI / 180)
+    assert_in_delta 1000, meters_east, 0.01
+    assert_in_delta 33.5, balloon.lat, 0.000001
+    assert_equal [ 10.0, 0.0 ], [ balloon.speed_east, balloon.speed_north ]
+    assert_equal Time.utc(2026, 11, 7, 0, 1, 40), balloon.moved_at
+  end
+
+  test "速度の倍率だけ速く進める" do
+    balloon = balloons(:flying)
+
+    Balloon.move_flying!(wind: WEST_WIND, speed_scale: 3, now: balloon.moved_at + 100.seconds)
+
+    meters_east = (balloon.reload.lng - 130.5) * Balloon::METERS_PER_DEGREE * Math.cos(33.5 * Math::PI / 180)
+    assert_in_delta 3000, meters_east, 0.01
+  end
+
+  test "飛行中でない風船は動かさない" do
+    assert_no_changes -> { balloons(:lost).reload.attributes } do
+      Balloon.move_flying!(wind: WEST_WIND, speed_scale: 1, now: Time.current)
+    end
+  end
+
+  test "風データがなければ、その場にとどまる" do
+    balloon = balloons(:flying)
+
+    Balloon.move_flying!(wind: {}, speed_scale: 1, now: balloon.moved_at + 100.seconds)
+
+    assert_equal [ 33.5, 130.5 ], [ balloon.reload.lat, balloon.lng ]
+  end
+
+  test "日本の排他的経済水域の外へ出た風船は割れる" do
+    balloon = balloons(:flying)
+    balloon.update!(lat: 35.0, lng: 157.0)
+
+    Balloon.move_flying!(wind: WEST_WIND, speed_scale: 1, now: balloon.moved_at + 100.seconds)
+
+    balloon.reload
+    assert_equal "lost", balloon.status
+    assert_equal Time.utc(2026, 11, 7, 0, 1, 40), balloon.ended_at
+  end
+
+  test "排他的経済水域の中にいる風船は飛び続ける" do
+    Balloon.move_flying!(wind: WEST_WIND, speed_scale: 1, now: balloons(:flying).moved_at + 100.seconds)
+
+    assert_equal "flying", balloons(:flying).reload.status
+  end
+end
