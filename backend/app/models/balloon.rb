@@ -23,7 +23,7 @@ class Balloon < ApplicationRecord
   end
 
   def collect_by!(user)
-    transaction do
+    user.with_lock do
       # 先に flying か読んで確かめないのは、読んでから更新するまでに他の人が回収すると、二人とも成功してしまうから
       raise NotFlying unless Balloon.flying.where(id:).update_all(status: "collected", ended_at: Time.current) == 1
 
@@ -33,21 +33,27 @@ class Balloon < ApplicationRecord
   end
 
   def self.move_flying!(wind:, speed_scale:, now: Time.current)
-    rows = flying.map { |balloon| balloon.bound_for ? balloon.sail(now:, speed_scale:) : balloon.drift(wind:, speed_scale:, now:) }
-    return if rows.empty?
+    transaction do
+      balloons = flying.order(:id).lock.to_a
+      next if balloons.empty?
 
-    # 1行ずつ update すると、5秒ごとに風船の数だけ SQL が走るので、JSON で渡してまとめて1文にする。
-    # 読んだあとに回収された風船を動かさないよう、更新の時点でも flying に絞る
-    connection.exec_update(sanitize_sql_array([ <<~SQL, now, now, rows.to_json ]))
-      UPDATE balloons
-      SET lat = v.lat, lng = v.lng, speed_east = v.speed_east, speed_north = v.speed_north, moved_at = ?,
-          status = CASE WHEN v.lost THEN 'lost' ELSE balloons.status END,
-          ended_at = CASE WHEN v.lost THEN ? ELSE balloons.ended_at END,
-          last_port = v.last_port, bound_for = v.bound_for, boarded_at = v.boarded_at
-      FROM jsonb_to_recordset(?::jsonb) AS v(id bigint, lat float8, lng float8, speed_east float8, speed_north float8, lost boolean,
-                                             last_port integer, bound_for integer, boarded_at timestamp)
-      WHERE balloons.id = v.id AND balloons.status = 'flying'
-    SQL
+      # ロック待ち中に再配置された場合、更新時刻より前から移動を計算しない。
+      now = [ now, balloons.map(&:moved_at).max ].max
+      rows = balloons.map { |balloon| balloon.bound_for ? balloon.sail(now:, speed_scale:) : balloon.drift(wind:, speed_scale:, now:) }
+
+      # 1行ずつ update すると、5秒ごとに風船の数だけ SQL が走るので、JSON で渡してまとめて1文にする。
+      # 読んだあとに回収された風船を動かさないよう、更新の時点でも flying に絞る
+      connection.exec_update(sanitize_sql_array([ <<~SQL, now, now, rows.to_json ]))
+        UPDATE balloons
+        SET lat = v.lat, lng = v.lng, speed_east = v.speed_east, speed_north = v.speed_north, moved_at = ?,
+            status = CASE WHEN v.lost THEN 'lost' ELSE balloons.status END,
+            ended_at = CASE WHEN v.lost THEN ? ELSE balloons.ended_at END,
+            last_port = v.last_port, bound_for = v.bound_for, boarded_at = v.boarded_at
+        FROM jsonb_to_recordset(?::jsonb) AS v(id bigint, lat float8, lng float8, speed_east float8, speed_north float8, lost boolean,
+                                               last_port integer, bound_for integer, boarded_at timestamp)
+        WHERE balloons.id = v.id AND balloons.status = 'flying'
+      SQL
+    end
   end
 
   def drift(wind:, speed_scale:, now:)

@@ -64,6 +64,58 @@ security:
 
 paths:
 
+  /test_reset_favorite_limit:
+    post:
+      tags: [テスト用]
+      operationId: test_reset_favorite_limit
+      summary: 当日のお気に入り回収上限をリセットする
+      description: |
+        開発・テスト環境限定。ログイン中のユーザーが対象です。
+        お気に入りと回収日を残したまま、当日の回収を上限判定から除外します。
+      responses:
+        '200':
+          description: リセットした件数（対象がなければ0）
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reset_count]
+                properties:
+                  reset_count:
+                    type: integer
+                    minimum: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 本番環境では利用できません
+
+  /test_reposition_balloons:
+    post:
+      tags: [テスト用]
+      operationId: test_reposition_balloons
+      summary: 飛行中の風船を日本列島上へ再配置する
+      description: |
+        開発・テスト環境限定。認証が必要です。
+        全ユーザーの飛行中の風船を、ID順に札幌・仙台・東京・大阪・福岡・那覇へ配置します。
+        7件目から同じ地点を繰り返します。更新後の位置をWebSocketへ配信します。
+        配置後は通常の定期移動が再開します。
+      responses:
+        '200':
+          description: 更新した件数（飛行中がなければ0）
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [updated_count]
+                properties:
+                  updated_count:
+                    type: integer
+                    minimum: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 本番環境では利用できません
+
   # ---------- 認証と利用者 ----------
 
   /auth/signup:

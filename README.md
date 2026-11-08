@@ -1,5 +1,7 @@
 ## 開発環境の起動
 
+テスト用の上限リセット・風船再配置APIは [docs/test-apis.md](docs/test-apis.md) を参照してください。
+
 Docker Desktop を起動し、リポジトリ直下で実行します。
 
 ```sh
