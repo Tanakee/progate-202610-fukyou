@@ -11,13 +11,18 @@ Rails.application.routes.draw do
       resource :session, only: :destroy
     end
 
-    resource :me, only: :show, controller: :me
+    resource :me, only: :show, controller: :me do
+      get :tracks, to: "tracks#mine"
+    end
+
     namespace :me do
       resources :balloons, only: :index
       resources :pops, only: :index, path: "popped"
       resources :favorites, only: :index
       resources :journeys, only: :index
     end
+
+    resources :tracks, only: [:create, :show]
 
     resources :balloons, only: :create do
       scope module: :balloons do

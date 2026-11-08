@@ -1,0 +1,13 @@
+FROM ruby:3.4
+
+COPY --from=denoland/deno:bin-2.9.7 /deno /usr/local/bin/deno
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       python3-venv ffmpeg ca-certificates \
+    && python3 -m venv /opt/yt-dlp \
+    && /opt/yt-dlp/bin/pip install --no-cache-dir "yt-dlp[default]" \
+    && ln -s /opt/yt-dlp/bin/yt-dlp /usr/local/bin/yt-dlp \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app

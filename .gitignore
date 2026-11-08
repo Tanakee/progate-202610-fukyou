@@ -17,3 +17,9 @@ docs/diagrams/**/*.browser-check.json
 !/backend/tmp/pids/
 /backend/tmp/pids/*
 !/backend/tmp/pids/.keep
+
+# iOS（プロジェクトは XcodeGen で生成する）
+/ios/**/*.xcodeproj
+/ios/**/Config/Local.xcconfig
+/ios/**/xcuserdata/
+/ios/**/DerivedData/

@@ -14,6 +14,10 @@ x-rails: &rails
 services:
   app:
     <<: *rails
+    image: fukyou-app-dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
@@ -27,6 +31,7 @@ services:
       - |
         bundle install &&
         ruby bin/rails db:prepare &&
+        rm -f tmp/pids/server.pid &&
         exec ruby bin/rails server -b 0.0.0.0
     healthcheck:
       test: ["CMD", "curl", "-fs", "http://localhost:3000/up"]
