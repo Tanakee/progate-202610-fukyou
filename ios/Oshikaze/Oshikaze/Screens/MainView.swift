@@ -271,61 +271,6 @@ private struct MapButtons: View {
     }
 }
 
-/// 右上の地図のボタン。現在地へ戻る、2D と 3D を切り替える、北を上に戻す（回したときだけ出す）
-private struct MapButtons: View {
-    let camera: MapCamera?
-    let userLocation: CLLocationCoordinate2D?
-    let move: (MapCamera) -> Void
-
-    private var isTilted: Bool { (camera?.pitch ?? 0) > 5 }
-    private var isRotated: Bool {
-        let heading = camera?.heading ?? 0
-        return min(heading, 360 - heading) > 3
-    }
-
-    var body: some View {
-        VStack(spacing: 10) {
-            Button {
-                guard let userLocation else { return }
-                move(MapCamera(centerCoordinate: userLocation, distance: camera?.distance ?? 400_000,
-                               heading: camera?.heading ?? 0, pitch: camera?.pitch ?? 50))
-            } label: {
-                RoundIcon(systemName: "location.fill", size: 44)
-            }
-            .accessibilityLabel("現在地へ戻る")
-
-            Button {
-                guard let camera else { return }
-                move(MapCamera(centerCoordinate: camera.centerCoordinate, distance: camera.distance,
-                               heading: camera.heading, pitch: isTilted ? 0 : 50))
-            } label: {
-                Text(isTilted ? "2D" : "3D")
-                    .font(Theme.font(15, .bold))
-                    .foregroundStyle(Theme.sky)
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(.white))
-                    .shadow(color: Theme.sky.opacity(0.35), radius: 8, y: 4)
-            }
-            .accessibilityLabel(isTilted ? "真上から見る" : "傾けて見る")
-
-            if isRotated, let camera {
-                Button {
-                    move(MapCamera(centerCoordinate: camera.centerCoordinate, distance: camera.distance,
-                                   heading: 0, pitch: camera.pitch))
-                } label: {
-                    // 針は北を指すように、地図の向きと逆に回す
-                    RoundIcon(systemName: "location.north.fill", size: 44, color: Theme.heart)
-                        .rotationEffect(.degrees(-camera.heading))
-                }
-                .accessibilityLabel("北を上にする")
-                .transition(.scale.combined(with: .opacity))
-            }
-        }
-        .buttonStyle(.bouncy)
-        .animation(.spring, value: isRotated)
-    }
-}
-
 /// 飛ばすボタン。飛行中は「🎈 12回」のように聴かれた回数を出し、押すと自分の風船へ移動する
 private struct LaunchButton: View {
     let balloon: MyBalloon?
