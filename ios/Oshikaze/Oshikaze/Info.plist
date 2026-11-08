@@ -33,6 +33,12 @@
 	<string>手元のMacで動かしているサーバーに接続します</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>近くを漂う風船の曲を流すために、現在地を使います。現在地はサーバーへ送りません</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>ZenMaruGothic-Regular.ttf</string>
+		<string>ZenMaruGothic-Medium.ttf</string>
+		<string>ZenMaruGothic-Bold.ttf</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

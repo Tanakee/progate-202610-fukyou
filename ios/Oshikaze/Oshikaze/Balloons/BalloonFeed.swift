@@ -4,7 +4,8 @@ import Observation
 import os
 
 /// BEの `/ws`（Action Cable）で `BalloonsChannel` を購読し、地図に出す風船を保つ。
-/// `balloons.snapshot` が地図の状態の正で、次の配信までは風の速さで位置を補間する
+/// `balloons.snapshot` が地図の状態の正で、届くたびに、今表示している位置から届いた位置へ5秒かけて動かす。
+/// 風の速さで先を予測しないのは、船に乗った風船（#30）が航路の曲がり角で陸の上を突っ切り、次の配信でワープして見えるから
 @MainActor
 @Observable
 final class BalloonFeed {
@@ -15,14 +16,15 @@ final class BalloonFeed {
     }
 
     private(set) var balloons: [Balloon] = []
-    private(set) var state = State.disconnected
+    /// 起動直後は、まだ一度もつないでいないので「接続中」として表示する
+    private(set) var state = State.connecting
 
-    private struct Anchor {
+    /// 1つの風船の、動き出した位置と行き先
+    private struct Leg {
         let id: Int
         let trackID: Int
-        let coordinate: CLLocationCoordinate2D
-        let east: Double
-        let north: Double
+        let from: CLLocationCoordinate2D
+        let to: CLLocationCoordinate2D
     }
 
     private struct Envelope: Decodable {
@@ -39,9 +41,8 @@ final class BalloonFeed {
     private var watchdog: Task<Void, Never>?
     private var ticker: Task<Void, Never>?
 
-    private var anchors: [Anchor] = []
-    private var anchoredAt = Date.now
-    private var speedScale = 1.0
+    private var legs: [Leg] = []
+    private var legStartedAt = Date.now
     private var latestSeq = 0
     /// 回収などで消した風船と、消した時刻。届く途中の古い配信で復活させない
     private var removedAt: [Int: Date] = [:]
@@ -54,8 +55,8 @@ final class BalloonFeed {
     private static let silenceLimit: TimeInterval = 10
     private static let maxBackoff: TimeInterval = 30
     private static let frameInterval: Duration = .milliseconds(50)
-    /// 配信は5秒ごとなので、その2回分
-    private static let maxExtrapolation: TimeInterval = 10
+    /// 配信の間隔と同じだけかけて、次の位置へ動かす
+    static let legDuration: TimeInterval = 5
 
     init(url: URL = AppConfig.webSocketURL) {
         self.url = url
@@ -185,7 +186,7 @@ final class BalloonFeed {
     /// 回収した風船を、次の配信を待たずに地図から消す
     func remove(_ id: Int) {
         removedAt[id] = .now
-        anchors.removeAll { $0.id == id }
+        legs.removeAll { $0.id == id }
         updatePositions()
     }
 
@@ -193,15 +194,24 @@ final class BalloonFeed {
         // 届く順が入れ替わっても、古い配信で巻き戻さない
         guard snapshot.seq >= latestSeq else { return }
         latestSeq = snapshot.seq
-        speedScale = snapshot.speedScale
-        anchoredAt = .now
         removedAt = removedAt.filter { Date.now.timeIntervalSince($0.value) < Self.removalGrace }
-        anchors = snapshot.balloons.compactMap { item in
+        // 今表示している位置から動き出す。前の移動の途中で届いても、その場から向きを変える
+        let shown = Dictionary(uniqueKeysWithValues: balloons.map { ($0.id, $0.coordinate) })
+        legs = snapshot.balloons.compactMap { item in
             let coordinate = CLLocationCoordinate2D(latitude: item.lat, longitude: item.lng)
             guard CLLocationCoordinate2DIsValid(coordinate), removedAt[item.id] == nil else { return nil }
-            return Anchor(id: item.id, trackID: item.trackID, coordinate: coordinate, east: item.ve, north: item.vn)
+            // 初めて届いた風船は、届いた位置にそのまま出す
+            return Leg(id: item.id, trackID: item.trackID, from: shown[item.id] ?? coordinate, to: coordinate)
         }
+        legStartedAt = .now
         updatePositions()
+    }
+
+    /// from から to へ、fraction（0〜1）だけ進んだ位置。1を超えたら to で止める
+    static func interpolate(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D, fraction: Double) -> CLLocationCoordinate2D {
+        let t = min(max(fraction, 0), 1)
+        return CLLocationCoordinate2D(latitude: from.latitude + (to.latitude - from.latitude) * t,
+                                      longitude: from.longitude + (to.longitude - from.longitude) * t)
     }
 
     private func startTicker() {
@@ -214,15 +224,11 @@ final class BalloonFeed {
         }
     }
 
-    /// 最後の配信の位置から、経過時間 × 倍率だけ風で進める。
-    /// 配信が途切れたまま進め続けると、BEでは割れた風船まで日本の外へ流れていくので、配信2回分で止める
+    /// 届いた位置まで動いたら止めて、次の配信を待つ。配信が途切れても、BEにない場所へ流れていかない
     private func updatePositions() {
-        let elapsed = min(Date.now.timeIntervalSince(anchoredAt), Self.maxExtrapolation)
-        let seconds = elapsed * speedScale
-        balloons = anchors.map { anchor in
-            Balloon(id: anchor.id,
-                    trackID: anchor.trackID,
-                    coordinate: Geo.advance(anchor.coordinate, east: anchor.east * seconds, north: anchor.north * seconds))
+        let fraction = Date.now.timeIntervalSince(legStartedAt) / Self.legDuration
+        balloons = legs.map { leg in
+            Balloon(id: leg.id, trackID: leg.trackID, coordinate: Self.interpolate(from: leg.from, to: leg.to, fraction: fraction))
         }
     }
 }

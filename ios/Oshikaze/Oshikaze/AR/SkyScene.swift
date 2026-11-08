@@ -53,10 +53,12 @@ final class SkyScene {
         var age: Double
     }
 
+    /// 割れた風船の花びらや、弾の軌跡のキラキラ。時間とともに小さくなって消える
     private struct Fragment {
         let entity: ModelEntity
         var velocity: SIMD3<Float>
         var age: Double
+        var lifetime: Double = SkyScene.fragmentLifetime
     }
 
     private static let gravity = SIMD3<Float>(0, -9.8, 0)
@@ -64,7 +66,9 @@ final class SkyScene {
     /// 当たりの判定は見た目より少し大きくして、当てやすくする
     private static let hitRadius: Float = 1.5
     private static let projectileLifetime = 4.0
-    private static let fragmentLifetime = 1.4
+    private nonisolated static let fragmentLifetime = 1.4
+    private nonisolated static let sparkleLifetime = 0.35
+    private static let ammoColor = UIColor(red: 1.0, green: 0.61, blue: 0.79, alpha: 1)
     private static let colors: [UIColor] = [.systemRed, .systemOrange, .systemYellow, .systemGreen, .systemMint,
                                             .systemTeal, .systemCyan, .systemBlue, .systemIndigo, .systemPurple, .systemPink]
 
@@ -198,8 +202,9 @@ final class SkyScene {
         let speed: Float = 14 + length / 220 * 22
         let velocity = simd_normalize(aim) * speed
 
-        let stone = ModelEntity(mesh: .generateSphere(radius: 0.08),
-                                materials: [SimpleMaterial(color: .white, roughness: 0.6, isMetallic: false)])
+        // 画面のパチンコの弾と同じ、つやのあるパステルピンク
+        let stone = ModelEntity(mesh: .generateSphere(radius: 0.09),
+                                materials: [SimpleMaterial(color: Self.ammoColor, roughness: 0.15, isMetallic: false)])
         stone.position = origin + forward * 0.4 - up * 0.15
         root.addChild(stone)
         projectiles.append(Projectile(entity: stone, velocity: velocity, age: 0))
@@ -231,7 +236,9 @@ final class SkyScene {
             if projectiles[index].age > Self.projectileLifetime {
                 stone.removeFromParent()
                 projectiles.remove(at: index)
+                continue
             }
+            sparkle(at: stone.position)
         }
 
         for index in fragments.indices.reversed() {
@@ -239,7 +246,7 @@ final class SkyScene {
             fragments[index].age += deltaTime
             let fragment = fragments[index].entity
             fragment.position += fragments[index].velocity * dt
-            let life = Float(1 - fragments[index].age / Self.fragmentLifetime)
+            let life = Float(1 - fragments[index].age / fragments[index].lifetime)
             fragment.scale = SIMD3(repeating: max(life, 0))
             if life <= 0 {
                 fragment.removeFromParent()
@@ -248,6 +255,18 @@ final class SkyScene {
         }
 
         updateAim()
+    }
+
+    /// 飛んでいる弾の後ろに、白とピンクの小さな光を残す
+    private func sparkle(at position: SIMD3<Float>) {
+        let color = Bool.random() ? UIColor.white : Self.ammoColor
+        var material = UnlitMaterial(color: color)
+        material.blending = .transparent(opacity: 0.85)
+        let dot = ModelEntity(mesh: .generateSphere(radius: Float.random(in: 0.025...0.05)), materials: [material])
+        let jitter = SIMD3<Float>(Float.random(in: -0.04...0.04), Float.random(in: -0.04...0.04), Float.random(in: -0.04...0.04))
+        dot.position = position + jitter
+        root.addChild(dot)
+        fragments.append(Fragment(entity: dot, velocity: .zero, age: 0, lifetime: Self.sparkleLifetime))
     }
 
     /// 割れた風船を、花びらのような小さなかけらにして散らす

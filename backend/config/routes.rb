@@ -22,18 +22,18 @@ Rails.application.routes.draw do
 
     namespace :me do
       resources :balloons, only: :index
-      resources :pops, only: :index, path: "popped"
       resources :favorites, only: :index
       resources :journeys, only: :index
     end
 
-    resources :tracks, only: [ :create, :show ]
+    resources :tracks, only: [ :create, :show ] do
+      get :audio, on: :member
+    end
 
     resources :balloons, only: :create do
       scope module: :balloons do
         resources :plays, only: :create
         resource :collection, only: :create, path: "collect"
-        resource :pop, only: :create
       end
     end
   end

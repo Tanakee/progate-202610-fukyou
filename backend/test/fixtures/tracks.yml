@@ -2,10 +2,8 @@ alice_song:
   user: alice
   title: 風の通り道
   artist: 推しバンド
-  mp3_url: https://storage.example.com/tracks/alice_song.mp3
 
 bob_song:
   user: bob
   title: 空の向こう
   artist: 推しバンド
-  mp3_url: https://storage.example.com/tracks/bob_song.mp3

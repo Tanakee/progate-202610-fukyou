@@ -33,13 +33,11 @@
 | GET | `/me/balloons` | 必要 | 200 | 飛行中の自分の風船と回数を返す | なし |
 | POST | `/balloons/:id/plays` | 必要 | 200 | 5秒再生されたら回数を加算する（1人1回） | 風船ID |
 | POST | `/balloons/:id/collect` | 必要 | 200 | 回収する（1日1回） | 風船ID |
-| POST | `/balloons/:id/pop` | 必要 | 200 | 割る（自分の世界からのみ消す） | 風船ID |
 
 ### マイページ
 
 | メソッド | パス | 認証 | 成功 | 用途 | 主な入力 |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/me/popped` | 必要 | 200 | 割った風船のID一覧を返す | なし |
 | GET | `/me/favorites` | 必要 | 200 | お気に入り一覧を返す | なし |
 | GET | `/me/journeys` | 必要 | 200 | 旅の記録カード一覧を返す | なし |
 
@@ -63,7 +61,6 @@
 | `POST /balloons/:id/collect` | 403 | 自分の風船を回収しようとした |
 | `POST /balloons/:id/collect` | 409 | 飛行中ではない。先着に負けた場合も含み、回収回数は消費しない |
 | `POST /balloons/:id/collect` | 429 | 今日すでに回収している。1日の区切りは日本時間の0時 |
-| `POST /balloons/:id/pop` | 200 | 再送しても成功とする |
 
 ## WebSocket `/ws`
 

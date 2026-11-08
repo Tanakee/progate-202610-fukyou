@@ -29,6 +29,8 @@ module Backend
     config.x.speed_scale = ENV.fetch("SPEED_SCALE", "1").to_f
 
     config.action_cable.mount_path = "/ws"
+    # 既定の5分にしないのは、アプリが曲の URL を覚えたまま、同じ曲を何度もループして流すから
+    config.active_storage.service_urls_expire_in = 1.day
     # 接続元はブラウザではなく iOS アプリで、Origin ヘッダーが付かないため検査しない
     config.action_cable.disable_request_forgery_protection = true
     # config.eager_load_paths << Rails.root.join("extras")

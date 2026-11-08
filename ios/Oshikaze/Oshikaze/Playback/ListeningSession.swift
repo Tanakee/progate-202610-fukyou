@@ -17,7 +17,6 @@ final class ListeningSession {
     let tracks: TrackStore
     let auth: AuthStore
     let myBalloon: MyBalloonStore
-    let pops: PopStore
 
     private var loop: Task<Void, Never>?
     private var decidedAt = Date.distantPast
@@ -34,24 +33,18 @@ final class ListeningSession {
     private static let secondsToCountPlay = 5
 
     init(feed: BalloonFeed, location: LocationProvider, playback: PlaybackController, tracks: TrackStore,
-         auth: AuthStore, myBalloon: MyBalloonStore, pops: PopStore) {
+         auth: AuthStore, myBalloon: MyBalloonStore) {
         self.feed = feed
         self.location = location
         self.playback = playback
         self.tracks = tracks
         self.auth = auth
         self.myBalloon = myBalloon
-        self.pops = pops
     }
 
-    /// 流さない風船。自分の風船と割った風船は流さない
+    /// 流さない風船。自分の風船は流さない
     private var excludedBalloonIDs: Set<Int> {
-        pops.poppedIDs.union(myBalloon.balloon.map { [$0.id] } ?? [])
-    }
-
-    /// 自分の世界に見えている風船。割った風船は地図にも出さない
-    var visibleBalloons: [Balloon] {
-        feed.balloons.filter { !pops.poppedIDs.contains($0.id) }
+        myBalloon.balloon.map { [$0.id] } ?? []
     }
 
     var currentBalloon: Balloon? {
@@ -108,10 +101,9 @@ final class ListeningSession {
         playback.play(track)
     }
 
-    /// 流している風船を今日の1曲として回収する。回収した風船はみんなの空から消えるので、すぐ次の風船へ乗り換える
-    @discardableResult
-    func collectCurrent() async throws -> Favorite? {
-        guard let balloonID = currentBalloonID else { return nil }
+    /// 風船を今日の1曲として回収する。回収した風船はみんなの空から消えるので、すぐ次の風船へ乗り換える。
+    /// 確認を出している間に流す風船が切り替わることがあるので、確認を出したときの風船を受け取る
+    func collect(balloonID: Int) async throws -> Favorite {
         do {
             let favorite: Favorite = try await auth.client.send(.post, "balloons/\(balloonID)/collect")
             feed.remove(balloonID)

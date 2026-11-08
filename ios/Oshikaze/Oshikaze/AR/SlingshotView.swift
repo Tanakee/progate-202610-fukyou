@@ -2,11 +2,10 @@ import AVFoundation
 import RealityKit
 import SwiftUI
 
-/// 空を見上げて、浮かぶ風船をパチンコで割る画面
+/// 空を見上げて、気に入った曲の風船をパチンコで割り、お気に入りにする画面
 struct SlingshotView: View {
     @Environment(ListeningSession.self) private var session
     @Environment(MyBalloonStore.self) private var myBalloon
-    @Environment(PopStore.self) private var pops
     @Environment(AuthStore.self) private var auth
     @Environment(TrackStore.self) private var tracks
     @Environment(\.dismiss) private var dismiss
@@ -14,10 +13,12 @@ struct SlingshotView: View {
     /// 画面を開いたときに1回だけ作る。地図は毎秒何度も描き直されるので、
     /// ここで `= SkyScene()` と書くと、描き直しのたびに AR の部品を作っては捨ててしまう
     @State private var scene: SkyScene?
-    @State private var pull = CGSize.zero
     @State private var aimedTitle: String?
     @State private var message: String?
     @State private var sounds = Sounds()
+    /// 命中してからAPIの結果が返るまで、2秒ごとの更新で同じ風船を作り直さない
+    @State private var hiddenTargetIDs: Set<Int> = []
+    @State private var todaysFavorite: Favorite?
 
     /// 一度に浮かべる風船の数。多すぎると空が埋まって狙いにくい
     private static let targetCount = 8
@@ -35,10 +36,11 @@ struct SlingshotView: View {
                     Spacer()
                     if let message {
                         Text(message)
-                            .font(.headline)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(.regularMaterial, in: Capsule())
+                            .font(Theme.font(16, .bold, relativeTo: .headline))
+                            .foregroundStyle(Theme.ink)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 11)
+                            .softCard(tint: Theme.heart, cornerRadius: 22)
                             .transition(.scale.combined(with: .opacity))
                     }
                     slingshot
@@ -49,7 +51,11 @@ struct SlingshotView: View {
                     .overlay(alignment: .topTrailing) { closeButton.padding() }
             }
         }
+        // パチンコを引く操作を、下の端のiOSの操作（簡易アクセスやホームへ戻る）より先に受け付ける
+        .defersSystemGestures(on: .bottom)
+        .persistentSystemOverlays(.hidden)
         .task { await run() }
+        .task { await loadTodaysFavorite() }
         .onDisappear { scene?.stop() }
     }
 
@@ -58,21 +64,26 @@ struct SlingshotView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if let playing = listeningTrack {
                     Label("今聴いている：\(playing.title)", systemImage: "music.note")
-                        .font(.headline)
+                        .font(Theme.font(16, .bold, relativeTo: .headline))
                         .lineLimit(1)
                     Text("♪ の付いた、光っている風船です")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.font(13, relativeTo: .subheadline))
+                        .foregroundStyle(Theme.ink.opacity(0.6))
                 } else {
-                    Text("空を見上げて、風船を探そう")
-                        .font(.headline)
+                    Text("気に入った曲の風船を狙おう")
+                        .font(Theme.font(16, .bold, relativeTo: .headline))
                 }
+                Text(todaysFavorite.map { "今日はもう「\($0.track.title)」をお気に入りにしています" }
+                     ?? "割ると今日のお気に入りになります（1日1回）")
+                    .font(Theme.font(13, .bold, relativeTo: .subheadline))
+                    .foregroundStyle(Theme.heart)
                 Text(aimedTitle.map { "狙っている風船：\($0)" } ?? "風船は、実際にある方角に浮かんでいます")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.font(13, relativeTo: .subheadline))
+                    .foregroundStyle(Theme.ink.opacity(0.6))
             }
-            .padding(12)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .foregroundStyle(Theme.ink)
+            .padding(14)
+            .softCard(cornerRadius: 22)
             Spacer()
             closeButton
         }
@@ -88,10 +99,9 @@ struct SlingshotView: View {
         Button {
             dismiss()
         } label: {
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 34))
-                .symbolRenderingMode(.hierarchical)
+            RoundIcon(systemName: "xmark", size: 44, color: Theme.ink)
         }
+        .buttonStyle(.bouncy)
         .accessibilityLabel("閉じる")
     }
 
@@ -103,56 +113,17 @@ struct SlingshotView: View {
             .allowsHitTesting(false)
     }
 
-    /// 二股のフォークとゴム。石をつかんで引き、放すと飛ぶ
+    /// 画面下のパチンコ。放すと弾が飛ぶ
     private var slingshot: some View {
-        let stone = CGPoint(x: 100 + pull.width, y: 60 + pull.height)
-        return ZStack {
-            Path { path in
-                path.move(to: CGPoint(x: 50, y: 60))
-                path.addLine(to: stone)
-                path.addLine(to: CGPoint(x: 150, y: 60))
+        SlingshotPad { pull in
+            scene?.fire(pull: pull)
+            if hypot(pull.width, pull.height) > 20 {
+                sounds.play(.shot)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
-            .stroke(Color.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-            Path { path in
-                path.move(to: CGPoint(x: 100, y: 200))
-                path.addLine(to: CGPoint(x: 100, y: 120))
-                path.addLine(to: CGPoint(x: 50, y: 60))
-                path.move(to: CGPoint(x: 100, y: 120))
-                path.addLine(to: CGPoint(x: 150, y: 60))
-            }
-            .stroke(Color.brown, style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
-            Circle()
-                .fill(.white)
-                .frame(width: 30, height: 30)
-                .shadow(radius: 3)
-                .position(stone)
         }
-        .frame(width: 200, height: 200)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    pull = Self.limited(value.translation)
-                }
-                .onEnded { _ in
-                    scene?.fire(pull: pull)
-                    if hypot(pull.width, pull.height) > 20 {
-                        sounds.play(.shot)
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    }
-                    withAnimation(.interpolatingSpring(stiffness: 300, damping: 8)) { pull = .zero }
-                }
-        )
-        .padding(.bottom, 8)
-        .accessibilityLabel("パチンコ。下に引いて放すと、狙った方向に飛びます")
-    }
-
-    /// ゴムが伸びすぎないようにする
-    private static func limited(_ translation: CGSize) -> CGSize {
-        let length = hypot(translation.width, translation.height)
-        let maxLength: CGFloat = 130
-        guard length > maxLength else { return translation }
-        return CGSize(width: translation.width / length * maxLength, height: translation.height / length * maxLength)
+        // 画面の下の端から離して、簡易アクセス（下の端を下になぞると画面全体が降りる）と重ならないようにする
+        .padding(.bottom, 56)
     }
 
     // MARK: - 風船の入れ替えと当たり
@@ -175,8 +146,8 @@ struct SlingshotView: View {
         guard let here = session.location.coordinate else { return }
         let ownID = myBalloon.balloon?.id
         let playingID = listeningTrack == nil ? nil : session.currentBalloonID
-        var balloons = session.visibleBalloons
-            .filter { $0.id != ownID }
+        var balloons = session.feed.balloons
+            .filter { $0.id != ownID && !hiddenTargetIDs.contains($0.id) }
             .sorted { Geo.distance(here, $0.coordinate) < Geo.distance(here, $1.coordinate) }
         // 今聴いている風船は、近い8個に入っていなくても必ず浮かべる
         var nearest = Array(balloons.prefix(Self.targetCount))
@@ -190,13 +161,36 @@ struct SlingshotView: View {
     }
 
     private func hit(_ id: Int) async {
+        guard hiddenTargetIDs.insert(id).inserted else { return }
         sounds.play(.pop)
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         let title = await trackTitle(of: id)
-        withAnimation(.spring) { message = title.map { "「\($0)」の風船を割りました" } ?? "風船を割りました" }
-        await pops.pop(id, with: auth)
+        do {
+            todaysFavorite = try await session.collect(balloonID: id)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            withAnimation(.spring) {
+                message = title.map { "「\($0)」をお気に入りにしました！" } ?? "お気に入りにしました！"
+            }
+        } catch {
+            // 1日1回の制限や未ログインなら、風船を空へ戻してもう一度見られるようにする
+            hiddenTargetIDs.remove(id)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            withAnimation(.spring) { message = error.localizedDescription }
+        }
         try? await Task.sleep(for: .seconds(2))
         withAnimation { message = nil }
+    }
+
+    private func loadTodaysFavorite() async {
+        guard auth.isSignedIn else { return }
+        do {
+            let favorites: [Favorite] = try await auth.client.send(.get, "me/favorites")
+            // 端末のタイムゾーンで今日を決めないのは、1日1回の区切りがサーバーの日本時間の0時だから
+            let today = Date.now.formatted(Date.ISO8601FormatStyle(timeZone: TimeZone(identifier: "Asia/Tokyo")!).year().month().day())
+            todaysFavorite = favorites.first { $0.collectedOn == today }
+        } catch {
+            auth.handle(error)
+        }
     }
 
     private func aim(at id: Int?) async {

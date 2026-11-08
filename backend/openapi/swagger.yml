@@ -55,9 +55,9 @@ tags:
   - name: 曲
     description: mp3のアップロードと曲情報
   - name: 風船
-    description: 風船を飛ばす、聴く、回収する、割る
+    description: 風船を飛ばす、聴く、回収する
   - name: マイページ
-    description: 割った風船、お気に入り、旅の記録
+    description: お気に入り、旅の記録
 
 security:
   - bearerAuth: []
@@ -236,7 +236,8 @@ paths:
       description: |
         **認証**: `Authorization: Bearer <token>` ヘッダーが必要
 
-        mp3を1曲アップロードします。上限は20MBです。
+        音声ファイルを1曲アップロードします。上限は20MBです。
+        サーバーが128kbpsの固定ビットレートのmp3に変換し、ジャケット画像を除いて保存します。
       requestBody:
         required: true
         content:
@@ -296,6 +297,58 @@ paths:
                 $ref: '#/components/schemas/Track'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /tracks/{id}/audio:
+    get:
+      tags: [曲]
+      operationId: getTrackAudio
+      summary: mp3音源を返す
+      description: |
+        Railsがストレージからmp3を読み、実機へ返します。認証は不要です。
+        `Range` ヘッダーを指定すると、AVPlayerの再生開始やシークに必要な範囲だけを `206` で返します。
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/TrackId'
+        - name: Range
+          in: header
+          required: false
+          description: 取得するバイト範囲。単一範囲に対応
+          schema:
+            type: string
+            example: bytes=0-65535
+      responses:
+        '200':
+          description: mp3全体
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+                example: bytes
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: 指定された範囲のmp3
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+                example: bytes
+            Content-Range:
+              schema:
+                type: string
+                example: bytes 0-65535/17179
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '416':
+          description: 指定された範囲が音源のサイズ外
 
   /me/tracks:
     get:
@@ -492,53 +545,7 @@ paths:
                 code: daily_limit_reached
                 message: 回収は1日1回までです
 
-  /balloons/{id}/pop:
-    post:
-      tags: [風船]
-      operationId: popBalloon
-      summary: 割る（自分の世界からのみ消す）
-      description: |
-        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
-
-        自分の地図からだけ風船を消します。他の人には引き続き見えます。再送しても `200` を返します。
-      parameters:
-        - $ref: '#/components/parameters/BalloonId'
-      responses:
-        '200':
-          description: 割るのに成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PopResult'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   # ---------- マイページ ----------
-
-  /me/popped:
-    get:
-      tags: [マイページ]
-      operationId: listMyPopped
-      summary: 割った風船のID一覧を返す
-      description: |
-        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
-
-        アプリはこの一覧に入っている風船を地図に表示しません。
-      responses:
-        '200':
-          description: 取得に成功
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: integer
-                  format: int64
-                  example: 42
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   /me/favorites:
     get:
@@ -717,8 +724,10 @@ components:
         mp3_url:
           type: string
           format: uri
-          description: mp3を取得するURL
-          example: https://storage.example.com/tracks/7.mp3
+          description: |
+            Rails経由でmp3を取得するURL。Rangeリクエスト（206）に対応する。
+            mp3は128kbpsの固定ビットレートで、ジャケット画像を含まない
+          example: http://localhost:3000/tracks/7/audio
 
     Balloon:
       type: object
@@ -877,13 +886,3 @@ components:
           minimum: 0
           description: 加算後（加算しなかった場合は現在）の再生回数
           example: 13
-
-    PopResult:
-      type: object
-      required: [balloon_id]
-      properties:
-        balloon_id:
-          type: integer
-          format: int64
-          example: 42
-          description: 割った風船のID

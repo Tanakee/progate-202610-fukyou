@@ -49,6 +49,7 @@ struct LoginView: View {
             }
         }
         .navigationTitle(isSignUp ? "新規登録" : "ログイン")
+        .skyBackground()
     }
 
     private func submit() async {

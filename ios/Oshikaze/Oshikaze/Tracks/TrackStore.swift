@@ -7,10 +7,13 @@ struct Track: Decodable, Equatable, Identifiable {
     let artist: String
     /// BEに保存されたmp3。ここから直接流す
     let mp3URL: URL
+    /// 曲のサムネイル。BEがまだ返さないこともあるので、なくても読めるようにする
+    let thumbnailURL: URL?
 
     enum CodingKeys: String, CodingKey {
         case id, title, artist
         case mp3URL = "mp3_url"
+        case thumbnailURL = "thumbnail_url"
     }
 }
 

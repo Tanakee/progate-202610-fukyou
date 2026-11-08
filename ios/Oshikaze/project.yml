@@ -11,12 +11,16 @@ targets:
     platform: iOS
     sources:
       - Oshikaze
+      # 港のデータ（#30）。コピーせず、BEのファイルをそのまま同梱する
+      - path: ../../backend/config/sea_routes.json
+        buildPhase: resources
     settings:
       base:
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: Oshikaze/Info.plist
       properties:
@@ -26,6 +30,10 @@ targets:
           - UIInterfaceOrientationPortrait
         UIBackgroundModes:
           - audio
+        UIAppFonts:
+          - ZenMaruGothic-Regular.ttf
+          - ZenMaruGothic-Medium.ttf
+          - ZenMaruGothic-Bold.ttf
         NSLocationWhenInUseUsageDescription: 近くを漂う風船の曲を流すために、現在地を使います。現在地はサーバーへ送りません
         NSCameraUsageDescription: 空を見上げて、浮かんでいる風船をパチンコで割るために、カメラを使います
         NSLocalNetworkUsageDescription: 手元のMacで動かしているサーバーに接続します

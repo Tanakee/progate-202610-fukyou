@@ -4,7 +4,7 @@ class LaunchBalloonTest < ActionDispatch::IntegrationTest
   setup do
     @carol = User.create!(email: "carol@example.com", password: "password123")
     @carol_token = @carol.auth_tokens.create!.token
-    @carol_song = @carol.tracks.create!(title: "夜の風", artist: "推しバンド", mp3_url: "https://storage.example.com/tracks/carol_song.mp3")
+    @carol_song = @carol.tracks.create!(title: "夜の風", artist: "推しバンド", audio: file_fixture("song.mp3").open)
   end
 
   test "飛ばすと、出発地点にいる飛行中の風船を返す" do
