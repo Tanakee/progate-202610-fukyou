@@ -82,8 +82,9 @@ struct SlingshotPad: View {
         if isDragging && stretch > 0.08 {
             drawAimGuide(in: &context, pull: current, stretch: stretch)
         }
-        drawBand(in: &context, from: Self.leftTip, to: stone, stretch: stretch)
+        // 引いた弾は本体より手前にあるので、本体を先に描き、ゴムと弾を上に重ねる
         drawFork(in: &context)
+        drawBand(in: &context, from: Self.leftTip, to: stone, stretch: stretch)
         drawBand(in: &context, from: Self.rightTip, to: stone, stretch: stretch)
         drawPouch(in: &context, at: stone, pull: current)
         drawAmmo(in: &context, at: stone)
