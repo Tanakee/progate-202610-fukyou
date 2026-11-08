@@ -34,6 +34,7 @@ Rails.application.routes.draw do
       scope module: :balloons do
         resources :plays, only: :create
         resource :collection, only: :create, path: "collect"
+        resource :landing, only: :create, path: "land"
       end
     end
   end

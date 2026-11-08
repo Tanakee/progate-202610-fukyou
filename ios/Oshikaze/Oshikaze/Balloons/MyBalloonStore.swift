@@ -77,6 +77,22 @@ final class MyBalloonStore {
         }
     }
 
+    /// 先に手元から消すのは、次の読み直しで「旅が終わった」と通知しないため
+    func land(with auth: AuthStore) async throws {
+        guard let balloon else { return }
+        do {
+            try await auth.client.send(.post, "balloons/\(balloon.id)/land")
+            self.balloon = nil
+        } catch let error as APIError where error.status == 409 {
+            // 下ろす前に回収されたか、旅が終わっていた
+            await refresh(with: auth)
+            throw error
+        } catch {
+            auth.handle(error)
+            throw error
+        }
+    }
+
     func clear() {
         balloon = nil
     }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -76,7 +76,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_130000) do
     t.index ["user_id"], name: "index_balloons_on_user_id"
     t.index ["user_id"], name: "index_balloons_on_user_id_flying", unique: true, where: "((status)::text = 'flying'::text)"
     t.check_constraint "play_count >= 0", name: "balloons_play_count_check"
-    t.check_constraint "status::text = ANY (ARRAY['flying'::character varying, 'collected'::character varying, 'lost'::character varying]::text[])", name: "balloons_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['flying'::character varying, 'collected'::character varying, 'lost'::character varying, 'landed'::character varying]::text[])", name: "balloons_status_check"
   end
 
   create_table "favorites", force: :cascade do |t|

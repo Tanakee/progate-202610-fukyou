@@ -5,9 +5,12 @@ struct MyTracksView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(TrackStore.self) private var tracks
     @Environment(MyBalloonStore.self) private var myBalloon
+    @Environment(ListeningSession.self) private var session
     @State private var youtubeURL = ""
     @State private var isImporting = false
     @State private var errorMessage: String?
+    @State private var confirmsLanding = false
+    @State private var isLanding = false
     @State private var demoMessage: String?
 
     var body: some View {
@@ -38,6 +41,27 @@ struct MyTracksView: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage).foregroundStyle(.red)
+                }
+            }
+
+            if let balloon = myBalloon.balloon {
+                Section("飛んでいる風船") {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tracks.myTracks.first { $0.id == balloon.trackID }?.title ?? "自分の曲").font(.headline)
+                        Text("\(balloon.originLabel)から・\(balloon.playCount)回聴かれました")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    Button("風船を下ろす", role: .destructive) {
+                        confirmsLanding = true
+                    }
+                    .disabled(isLanding)
+                    .confirmationDialog("風船を下ろしますか？", isPresented: $confirmsLanding, titleVisibility: .visible) {
+                        Button("下ろす", role: .destructive) {
+                            Task { await land(balloon) }
+                        }
+                    } message: {
+                        Text("みんなの空から消えて、旅が終わります。下ろしたあとは、次の風船を飛ばせます")
+                    }
                 }
             }
 
@@ -114,6 +138,18 @@ struct MyTracksView: View {
         } catch {
             auth.handle(error)
             demoMessage = error.localizedDescription
+        }
+    }
+
+    private func land(_ balloon: MyBalloon) async {
+        isLanding = true
+        defer { isLanding = false }
+        do {
+            try await myBalloon.land(with: auth)
+            session.feed.remove(balloon.id)
+            errorMessage = nil
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
