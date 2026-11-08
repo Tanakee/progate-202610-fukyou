@@ -2,9 +2,6 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-rule_files:
-  - alerts.yml
-
 scrape_configs:
   - job_name: prometheus
     static_configs:
@@ -34,7 +31,8 @@ scrape_configs:
     params:
       module: [http_2xx]
     static_configs:
-      - targets: ["http://app:3000/up"]
+      # /up_broken は、アラートの出方を確かめるための存在しないパス。監視は Grafana で普段 OFF にしてある
+      - targets: ["http://app:3000/up", "http://app:3000/up_broken"]
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

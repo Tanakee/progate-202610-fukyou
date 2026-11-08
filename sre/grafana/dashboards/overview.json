@@ -3,7 +3,7 @@
   "title": "推し風 SRE",
   "timezone": "browser",
   "schemaVersion": 41,
-  "version": 1,
+  "version": 2,
   "refresh": "10s",
   "time": {
     "from": "now-30m",
@@ -40,7 +40,7 @@
   "panels": [
     {
       "type": "row",
-      "title": "アラート",
+      "title": "監視（ON/OFF は左のメニューの「アラート」→「アラートルール」で切り替える）",
       "collapsed": false,
       "panels": [],
       "id": 1,
@@ -52,116 +52,64 @@
       }
     },
     {
-      "type": "stat",
+      "type": "alertlist",
       "title": "発生中のアラート",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "count(ALERTS{alertstate=\"firing\"}) or vector(0)",
-          "legendFormat": "発生中",
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value_and_name"
-      },
-      "id": 2,
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 4,
-        "h": 8
-      }
-    },
-    {
-      "type": "table",
-      "title": "発生中のアラート一覧（閾値は sre/prometheus/alerts.yml）",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "ALERTS{alertstate=~\"firing|pending\"}",
-          "instant": true,
-          "format": "table"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "Value": true,
-              "__name__": true,
-              "job": true,
-              "instance": true
-            },
-            "renameByName": {
-              "alertname": "アラート",
-              "alertstate": "状態",
-              "severity": "重さ",
-              "service": "コンテナ",
-              "batch": "定期処理"
-            }
-          }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
+        "w": 8,
+        "h": 14
       },
       "options": {
-        "showHeader": true
+        "viewMode": "list",
+        "groupMode": "default",
+        "groupBy": [],
+        "maxItems": 50,
+        "sortOrder": 1,
+        "dashboardAlerts": false,
+        "alertName": "",
+        "alertInstanceLabelFilter": "",
+        "showInstances": false,
+        "stateFilter": {
+          "firing": true,
+          "pending": true,
+          "noData": true,
+          "normal": false,
+          "error": true,
+          "recovering": false
+        }
       },
-      "id": 3,
+      "id": 2
+    },
+    {
+      "type": "alertlist",
+      "title": "監視一覧（【対象】観点）",
       "gridPos": {
-        "x": 4,
+        "x": 8,
         "y": 1,
-        "w": 20,
-        "h": 8
-      }
+        "w": 16,
+        "h": 14
+      },
+      "options": {
+        "viewMode": "list",
+        "groupMode": "default",
+        "groupBy": [],
+        "maxItems": 50,
+        "sortOrder": 1,
+        "dashboardAlerts": false,
+        "alertName": "",
+        "alertInstanceLabelFilter": "",
+        "showInstances": false,
+        "stateFilter": {
+          "firing": true,
+          "pending": true,
+          "noData": true,
+          "normal": true,
+          "error": true,
+          "recovering": true
+        }
+      },
+      "id": 3
     },
     {
       "type": "row",
@@ -171,14 +119,14 @@
       "id": 4,
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 15,
         "w": 24,
         "h": 1
       }
     },
     {
       "type": "stat",
-      "title": "最後に成功してからの秒数",
+      "title": "最後に成功してからの秒数（balloons:move は60秒、wind:fetch は5分で赤）",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -217,7 +165,64 @@
           },
           "mappings": []
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "balloons:move"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 30
+                    },
+                    {
+                      "color": "red",
+                      "value": 60
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "wind:fetch"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "#EAB839",
+                      "value": 120
+                    },
+                    {
+                      "color": "red",
+                      "value": 300
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "background",
@@ -232,7 +237,7 @@
       "id": 5,
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 16,
         "w": 8,
         "h": 6
       }
@@ -289,7 +294,7 @@
       "id": 6,
       "gridPos": {
         "x": 8,
-        "y": 10,
+        "y": 16,
         "w": 8,
         "h": 6
       }
@@ -308,7 +313,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "probe_success{job=\"api\"}",
+          "expr": "probe_success{job=\"api\",instance=\"http://app:3000/up\"}",
           "legendFormat": "API",
           "instant": true
         }
@@ -358,7 +363,7 @@
       "id": 7,
       "gridPos": {
         "x": 16,
-        "y": 10,
+        "y": 16,
         "w": 8,
         "h": 6
       }
@@ -419,7 +424,7 @@
       "id": 8,
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 22,
         "w": 12,
         "h": 8
       }
@@ -464,7 +469,7 @@
       "id": 9,
       "gridPos": {
         "x": 12,
-        "y": 16,
+        "y": 22,
         "w": 12,
         "h": 8
       }
@@ -477,7 +482,7 @@
       "id": 10,
       "gridPos": {
         "x": 0,
-        "y": 24,
+        "y": 30,
         "w": 24,
         "h": 1
       }
@@ -540,7 +545,7 @@
       "id": 11,
       "gridPos": {
         "x": 0,
-        "y": 25,
+        "y": 31,
         "w": 12,
         "h": 8
       }
@@ -603,7 +608,7 @@
       "id": 12,
       "gridPos": {
         "x": 12,
-        "y": 25,
+        "y": 31,
         "w": 12,
         "h": 8
       }
@@ -648,7 +653,7 @@
       "id": 13,
       "gridPos": {
         "x": 0,
-        "y": 33,
+        "y": 39,
         "w": 12,
         "h": 8
       }
@@ -667,7 +672,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "probe_duration_seconds{job=\"api\"}",
+          "expr": "probe_duration_seconds{job=\"api\",instance=\"http://app:3000/up\"}",
           "legendFormat": "/up"
         }
       ],
@@ -709,7 +714,7 @@
       "id": 14,
       "gridPos": {
         "x": 12,
-        "y": 33,
+        "y": 39,
         "w": 12,
         "h": 8
       }
@@ -722,7 +727,7 @@
       "id": 15,
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 47,
         "w": 24,
         "h": 1
       }
@@ -752,7 +757,7 @@
       "id": 16,
       "gridPos": {
         "x": 0,
-        "y": 42,
+        "y": 48,
         "w": 24,
         "h": 10
       }
@@ -782,7 +787,7 @@
       "id": 17,
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 58,
         "w": 24,
         "h": 12
       }

@@ -95,6 +95,8 @@ services:
     ports:
       - "127.0.0.1:3001:3000"
     volumes:
+      # 監視の ON/OFF をコンテナを作り直しても残すため
+      - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
@@ -104,6 +106,21 @@ services:
       resources:
         limits: { cpus: "0.5", memory: 256M }
 
+  # 監視（アラートルール）を Grafana に登録して終わる。一覧は grafana/monitors.py
+  grafana-setup:
+    cgroup_parent: /fukyou/grafana-setup
+    image: python:3.13-alpine
+    command: ["python", "-I", "/sre/monitors.py"]
+    volumes:
+      - ./grafana/monitors.py:/sre/monitors.py:ro
+    depends_on:
+      - grafana
+    restart: on-failure
+    deploy:
+      resources:
+        limits: { cpus: "0.25", memory: 64M }
+
 volumes:
   prometheus_data:
   loki_data:
+  grafana_data:
