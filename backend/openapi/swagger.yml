@@ -246,6 +246,58 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /tracks/{id}/audio:
+    get:
+      tags: [曲]
+      operationId: getTrackAudio
+      summary: mp3音源を返す
+      description: |
+        Railsがストレージからmp3を読み、実機へ返します。認証は不要です。
+        `Range` ヘッダーを指定すると、AVPlayerの再生開始やシークに必要な範囲だけを `206` で返します。
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/TrackId'
+        - name: Range
+          in: header
+          required: false
+          description: 取得するバイト範囲。単一範囲に対応
+          schema:
+            type: string
+            example: bytes=0-65535
+      responses:
+        '200':
+          description: mp3全体
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+                example: bytes
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: 指定された範囲のmp3
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+                example: bytes
+            Content-Range:
+              schema:
+                type: string
+                example: bytes 0-65535/17179
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '416':
+          description: 指定された範囲が音源のサイズ外
+
   /me/tracks:
     get:
       tags: [曲]
@@ -667,9 +719,9 @@ components:
           type: string
           format: uri
           description: |
-            mp3を直接取得する署名付きURL。返してから1日で使えなくなる。Rangeリクエスト（206）に対応する。
+            Rails経由でmp3を取得するURL。Rangeリクエスト（206）に対応する。
             mp3は128kbpsの固定ビットレートで、ジャケット画像を含まない
-          example: http://minio.localhost:9000/fukyou-development/abc123?X-Amz-Expires=86400&X-Amz-Signature=...
+          example: http://localhost:3000/tracks/7/audio
 
     Balloon:
       type: object

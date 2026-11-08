@@ -5,13 +5,45 @@ class TracksTest < ActionDispatch::IntegrationTest
     @token = users(:alice).auth_tokens.create!.token
   end
 
-  test "曲の mp3_url は、ストレージの音声を直接指す" do
+  test "曲の mp3_url は、Railsの音源取得APIを指す" do
     get "/tracks/#{tracks(:alice_song).id}"
 
     assert_response :ok
-    assert_match %r{/rails/active_storage/disk/.+/song\.mp3\z}, json["mp3_url"]
+    assert_equal "http://www.example.com/tracks/#{tracks(:alice_song).id}/audio", json["mp3_url"]
     get json["mp3_url"]
     assert_equal file_fixture("song.mp3").binread, response.body
+    assert_equal "audio/mpeg", response.media_type
+    assert_equal "bytes", response.headers["Accept-Ranges"]
+  end
+
+  test "音源の一部をRangeで取得できる" do
+    audio = file_fixture("song.mp3").binread
+
+    get "/tracks/#{tracks(:alice_song).id}/audio", headers: { "Range" => "bytes=10-109" }
+
+    assert_response :partial_content
+    assert_equal audio.byteslice(10..109), response.body
+    assert_equal "bytes 10-109/#{audio.bytesize}", response.headers["Content-Range"]
+    assert_equal "100", response.headers["Content-Length"]
+  end
+
+  test "末尾からのRangeで音源を取得できる" do
+    audio = file_fixture("song.mp3").binread
+
+    get "/tracks/#{tracks(:alice_song).id}/audio", headers: { "Range" => "bytes=-64" }
+
+    assert_response :partial_content
+    assert_equal audio.byteslice(-64, 64), response.body
+    assert_equal "bytes #{audio.bytesize - 64}-#{audio.bytesize - 1}/#{audio.bytesize}", response.headers["Content-Range"]
+  end
+
+  test "音源の範囲外を要求すると416を返す" do
+    size = file_fixture("song.mp3").size
+
+    get "/tracks/#{tracks(:alice_song).id}/audio", headers: { "Range" => "bytes=#{size}-" }
+
+    assert_response :range_not_satisfiable
+    assert_equal "bytes */#{size}", response.headers["Content-Range"]
   end
 
   test "音声ファイルを送ると、128kbps の固定ビットレートで、ジャケット画像を除いた MP3 にして保存する" do
