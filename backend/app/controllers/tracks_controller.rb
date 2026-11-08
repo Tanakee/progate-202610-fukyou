@@ -16,43 +16,66 @@ class TracksController < ApplicationController
   end
 
   def create
-    input = params.permit(:youtube_url)
-    info = YoutubeVideoInfo.fetch(input[:youtube_url])
+    if params[:file]
+      create_from_file
+    else
+      create_from_youtube
+    end
+  end
 
-    YoutubeAudioDownloader.with_audio(info) do |path|
-      File.open(path, "rb") do |file|
-        blob = ActiveStorage::Blob.build_after_unfurling(
-          io: file,
-          filename: "#{info.fetch('id')}.mp3",
-          content_type: "audio/mpeg",
-          identify: false
-        )
+  private
+    def create_from_file
+      input = params.permit(:title, :artist, :file)
 
-        blob.save!
-        file.rewind
-        blob.upload_without_unfurling(file)
-
-        @track = current_user.tracks.new(
-          title: info["track"].presence || info["title"].presence || "タイトル不明",
-          artist: info["artist"].presence || info["uploader"].presence || "不明",
-          mp3_url: rails_blob_url(blob, disposition: "inline")
-        )
-
-        @track.audio.attach(blob)
-        @track.save!
-      ensure
-        blob.purge if blob&.persisted? && !@track&.persisted?
+      # 拡張子や Content-Type で MP3 か確かめないのは、どちらも送る側が自由に決められるから。読めるかは ffmpeg に任せる
+      unless input[:file].is_a?(ActionDispatch::Http::UploadedFile) && input[:file].size <= 20.megabytes
+        return render_error :unprocessable_entity,
+          code: "invalid_file",
+          message: "20MB以下の音声ファイルを選んでください"
       end
+
+      Mp3Encoder.with_cbr(input[:file].path) do |path|
+        save_track(path, title: input[:title], artist: input[:artist],
+                         filename: "#{File.basename(input[:file].original_filename, '.*')}.mp3")
+      end
+
+      render :show, status: :created
+    rescue Mp3Encoder::Error => error
+      render_error :unprocessable_entity,
+        code: "invalid_file",
+        message: error.message
+    rescue ActiveRecord::RecordInvalid
+      render_error :unprocessable_entity,
+        code: "invalid_track",
+        message: "曲名とアーティスト名を入力してください"
     end
 
-    render :show, status: :created
-  rescue YoutubeVideoInfo::Error, YoutubeAudioDownloader::Error => error
-    render_error :unprocessable_entity,
-      code: "youtube_import_failed",
-      message: error.message
-  rescue ActiveRecord::RecordInvalid
-    render_error :unprocessable_entity,
-      code: "invalid_track",
-      message: "曲情報を保存できませんでした"
-  end
+    def create_from_youtube
+      input = params.permit(:youtube_url)
+      info = YoutubeVideoInfo.fetch(input[:youtube_url])
+
+      YoutubeAudioDownloader.with_audio(info) do |path|
+        save_track(path, title: info["track"].presence || info["title"].presence || "タイトル不明",
+                         artist: info["artist"].presence || info["uploader"].presence || "不明",
+                         filename: "#{info.fetch('id')}.mp3")
+      end
+
+      render :show, status: :created
+    rescue YoutubeVideoInfo::Error, YoutubeAudioDownloader::Error => error
+      render_error :unprocessable_entity,
+        code: "youtube_import_failed",
+        message: error.message
+    rescue ActiveRecord::RecordInvalid
+      render_error :unprocessable_entity,
+        code: "invalid_track",
+        message: "曲情報を保存できませんでした"
+    end
+
+    def save_track(path, title:, artist:, filename:)
+      File.open(path, "rb") do |file|
+        @track = current_user.tracks.new(title:, artist:)
+        @track.audio.attach(io: file, filename:, content_type: "audio/mpeg", identify: false)
+        @track.save!
+      end
+    end
 end

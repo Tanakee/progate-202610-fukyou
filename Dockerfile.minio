@@ -1,0 +1,24 @@
+# MinIOの公式ソースをビルドする
+FROM golang:1.24.2-bookworm AS builder
+
+WORKDIR /src
+
+RUN git clone --depth 1 \
+    --branch RELEASE.2025-04-22T22-12-26Z \
+    https://github.com/minio/minio.git .
+
+RUN CGO_ENABLED=0 go build -o /minio .
+
+# 実行用イメージ
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /minio /usr/local/bin/minio
+
+EXPOSE 9000 9001
+
+ENTRYPOINT ["minio"]
+CMD ["server", "/data", "--console-address", ":9001"]

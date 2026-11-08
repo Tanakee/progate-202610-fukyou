@@ -184,7 +184,8 @@ paths:
       description: |
         **認証**: `Authorization: Bearer <token>` ヘッダーが必要
 
-        mp3を1曲アップロードします。上限は20MBです。
+        音声ファイルを1曲アップロードします。上限は20MBです。
+        サーバーが128kbpsの固定ビットレートのmp3に変換し、ジャケット画像を除いて保存します。
       requestBody:
         required: true
         content:
@@ -665,8 +666,10 @@ components:
         mp3_url:
           type: string
           format: uri
-          description: mp3を取得するURL
-          example: https://storage.example.com/tracks/7.mp3
+          description: |
+            mp3を直接取得する署名付きURL。返してから1日で使えなくなる。Rangeリクエスト（206）に対応する。
+            mp3は128kbpsの固定ビットレートで、ジャケット画像を含まない
+          example: http://minio.localhost:9000/fukyou-development/abc123?X-Amz-Expires=86400&X-Amz-Signature=...
 
     Balloon:
       type: object

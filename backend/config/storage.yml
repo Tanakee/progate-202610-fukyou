@@ -6,6 +6,17 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
+minio:
+  service: S3
+  access_key_id: minioadmin
+  secret_access_key: minioadmin
+  region: us-east-1
+  bucket: fukyou-development
+  # minio:9000 にしないのは、署名付き URL にホスト名が入り、シミュレーターからその名前で届かないと署名が合わないから。
+  # *.localhost は Mac では自分自身を指し、compose の中では MinIO の別名にしてある
+  endpoint: http://minio.localhost:9000
+  force_path_style: true
+
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
 #   service: S3

@@ -1,0 +1,9 @@
+alice_song_audio:
+  name: audio
+  record: alice_song (Track)
+  blob: alice_song_audio
+
+bob_song_audio:
+  name: audio
+  record: bob_song (Track)
+  blob: bob_song_audio
