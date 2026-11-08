@@ -6,7 +6,6 @@ class User < ApplicationRecord
   has_many :tracks
   has_many :balloons
   has_many :plays
-  has_many :pops
   has_many :favorites
   has_many :journeys, through: :balloons
 

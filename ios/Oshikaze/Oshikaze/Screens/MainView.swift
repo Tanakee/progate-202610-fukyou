@@ -6,7 +6,6 @@ struct MainView: View {
     @Environment(ListeningSession.self) private var session
     @Environment(AuthStore.self) private var auth
     @Environment(MyBalloonStore.self) private var myBalloon
-    @Environment(PopStore.self) private var pops
     @Environment(ArtworkColors.self) private var artworkColors
     @State private var position = MapCameraPosition.userLocation(
         fallback: .camera(MapCamera(centerCoordinate: .init(latitude: 36.5, longitude: 137.5), distance: 3_000_000))
@@ -33,7 +32,7 @@ struct MainView: View {
                 }
                 .annotationTitles(.hidden)
             }
-            ForEach(session.visibleBalloons) { balloon in
+            ForEach(session.feed.balloons) { balloon in
                 Annotation("", coordinate: balloon.coordinate, anchor: .bottom) {
                     BalloonMark(id: balloon.id,
                                 isPlaying: balloon.id == session.currentBalloonID && isListening,
@@ -102,8 +101,6 @@ struct MainView: View {
             // ログインとログアウトのたびに読み直し、その後は30秒ごとに回数を更新する。
             // 先に空にするのは、別の人でログインし直したときに、前の人の風船が消えたと通知しないため
             myBalloon.clear()
-            pops.clear()
-            await pops.refresh(with: auth)
             while !Task.isCancelled {
                 await myBalloon.refresh(with: auth)
                 try? await Task.sleep(for: Self.myBalloonRefreshInterval)

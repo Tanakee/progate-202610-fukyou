@@ -6,6 +6,7 @@ import SwiftUI
 struct SlingshotView: View {
     @Environment(ListeningSession.self) private var session
     @Environment(MyBalloonStore.self) private var myBalloon
+    @Environment(AuthStore.self) private var auth
     @Environment(TrackStore.self) private var tracks
     @Environment(\.dismiss) private var dismiss
 
@@ -17,6 +18,7 @@ struct SlingshotView: View {
     @State private var sounds = Sounds()
     /// 命中してからAPIの結果が返るまで、2秒ごとの更新で同じ風船を作り直さない
     @State private var hiddenTargetIDs: Set<Int> = []
+    @State private var todaysFavorite: Favorite?
 
     /// 一度に浮かべる風船の数。多すぎると空が埋まって狙いにくい
     private static let targetCount = 8
@@ -53,6 +55,7 @@ struct SlingshotView: View {
         .defersSystemGestures(on: .bottom)
         .persistentSystemOverlays(.hidden)
         .task { await run() }
+        .task { await loadTodaysFavorite() }
         .onDisappear { scene?.stop() }
     }
 
@@ -70,7 +73,8 @@ struct SlingshotView: View {
                     Text("気に入った曲の風船を狙おう")
                         .font(Theme.font(16, .bold, relativeTo: .headline))
                 }
-                Text("割ると今日のお気に入りになります（1日1回）")
+                Text(todaysFavorite.map { "今日はもう「\($0.track.title)」をお気に入りにしています" }
+                     ?? "割ると今日のお気に入りになります（1日1回）")
                     .font(Theme.font(13, .bold, relativeTo: .subheadline))
                     .foregroundStyle(Theme.heart)
                 Text(aimedTitle.map { "狙っている風船：\($0)" } ?? "風船は、実際にある方角に浮かんでいます")
@@ -142,7 +146,7 @@ struct SlingshotView: View {
         guard let here = session.location.coordinate else { return }
         let ownID = myBalloon.balloon?.id
         let playingID = listeningTrack == nil ? nil : session.currentBalloonID
-        var balloons = session.visibleBalloons
+        var balloons = session.feed.balloons
             .filter { $0.id != ownID && !hiddenTargetIDs.contains($0.id) }
             .sorted { Geo.distance(here, $0.coordinate) < Geo.distance(here, $1.coordinate) }
         // 今聴いている風船は、近い8個に入っていなくても必ず浮かべる
@@ -162,7 +166,7 @@ struct SlingshotView: View {
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         let title = await trackTitle(of: id)
         do {
-            _ = try await session.collect(balloonID: id)
+            todaysFavorite = try await session.collect(balloonID: id)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             withAnimation(.spring) {
                 message = title.map { "「\($0)」をお気に入りにしました！" } ?? "お気に入りにしました！"
@@ -175,6 +179,18 @@ struct SlingshotView: View {
         }
         try? await Task.sleep(for: .seconds(2))
         withAnimation { message = nil }
+    }
+
+    private func loadTodaysFavorite() async {
+        guard auth.isSignedIn else { return }
+        do {
+            let favorites: [Favorite] = try await auth.client.send(.get, "me/favorites")
+            // 端末のタイムゾーンで今日を決めないのは、1日1回の区切りがサーバーの日本時間の0時だから
+            let today = Date.now.formatted(Date.ISO8601FormatStyle(timeZone: TimeZone(identifier: "Asia/Tokyo")!).year().month().day())
+            todaysFavorite = favorites.first { $0.collectedOn == today }
+        } catch {
+            auth.handle(error)
+        }
     }
 
     private func aim(at id: Int?) async {
