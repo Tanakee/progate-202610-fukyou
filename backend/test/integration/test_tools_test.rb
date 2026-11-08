@@ -90,11 +90,40 @@ class TestToolsTest < ActionDispatch::IntegrationTest
     assert_equal origins, Balloon.flying.order(:id).pluck(:origin_lat, :origin_lng, :launched_at)
   end
 
-  test "飛行中が0件でも成功する" do
-    Balloon.flying.update_all(status: "lost", ended_at: Time.current)
-    post "/test_reposition_balloons", headers: auth_header("alice-token")
+  test "飛んでいる風船がない人の曲を風船にして飛ばし、押した本人の曲は飛ばさない" do
+    Balloon.flying.update_all(status: "collected", ended_at: Time.current)
+
+    assert_difference "Balloon.flying.count", 1 do
+      post "/test_reposition_balloons", headers: auth_header("alice-token")
+    end
+
+    assert_response :ok
+    assert_equal 1, json["updated_count"]
+    assert_equal users(:bob), Balloon.flying.sole.user
+    assert_includes TestBalloonPlacement::POINTS, [ Balloon.flying.sole.lat, Balloon.flying.sole.lng ]
+  end
+
+  test "音声のない曲は飛ばさない" do
+    Balloon.flying.update_all(status: "collected", ended_at: Time.current)
+    tracks(:bob_song).audio_attachment.delete
+
+    assert_no_difference "Balloon.count" do
+      post "/test_reposition_balloons", headers: auth_header("alice-token")
+    end
+
     assert_response :ok
     assert_equal 0, json["updated_count"]
+  end
+
+  test "風船が飛んでいる人の曲は、もう1個飛ばさない" do
+    balloons(:flying).update!(status: "collected", ended_at: Time.current)
+
+    assert_no_difference "Balloon.count" do
+      post "/test_reposition_balloons", headers: auth_header("alice-token")
+    end
+
+    assert_response :ok
+    assert_equal 1, json["updated_count"]
   end
 
   test "すべての配置候補は日本の対象地域内にある" do
