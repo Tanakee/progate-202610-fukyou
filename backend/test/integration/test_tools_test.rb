@@ -103,6 +103,18 @@ class TestToolsTest < ActionDispatch::IntegrationTest
     assert_includes TestBalloonPlacement::POINTS, [ Balloon.flying.sole.lat, Balloon.flying.sole.lng ]
   end
 
+  test "音声のない曲は飛ばさない" do
+    Balloon.flying.update_all(status: "collected", ended_at: Time.current)
+    tracks(:bob_song).audio_attachment.delete
+
+    assert_no_difference "Balloon.count" do
+      post "/test_reposition_balloons", headers: auth_header("alice-token")
+    end
+
+    assert_response :ok
+    assert_equal 0, json["updated_count"]
+  end
+
   test "風船が飛んでいる人の曲は、もう1個飛ばさない" do
     balloons(:flying).update!(status: "collected", ended_at: Time.current)
 
