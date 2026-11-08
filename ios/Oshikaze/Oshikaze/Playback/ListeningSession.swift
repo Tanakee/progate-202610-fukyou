@@ -87,7 +87,6 @@ final class ListeningSession {
         let picked = NearestBalloonPicker.pick(from: feed.balloons, at: here,
                                                current: currentIsGone ? nil : currentBalloonID,
                                                excluded: excludedBalloonIDs)
-        preloadRunnerUp(at: here, besides: picked)
         guard picked != currentBalloonID || currentIsGone else { return }
         currentBalloonID = picked
         currentTrack = nil
@@ -97,17 +96,6 @@ final class ListeningSession {
             return
         }
         Task { await loadTrack(for: balloon) }
-    }
-
-    /// 今の風船の次に近い風船は、近づけば次に流す曲なので、曲の情報と音声の先頭を取っておく
-    private func preloadRunnerUp(at here: CLLocationCoordinate2D, besides picked: Int?) {
-        let excluded = excludedBalloonIDs.union(picked.map { [$0] } ?? [])
-        guard let id = NearestBalloonPicker.pick(from: feed.balloons, at: here, current: nil, excluded: excluded),
-              let balloon = feed.balloons.first(where: { $0.id == id }) else { return }
-        Task {
-            guard let track = await tracks.track(id: balloon.trackID) else { return }
-            playback.preload(track)
-        }
     }
 
     /// 曲を取ってから流す。取っている間に別の風船へ乗り換えていたら、何もしない
