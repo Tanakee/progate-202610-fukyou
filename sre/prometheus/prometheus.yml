@@ -1,0 +1,44 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      # compose.yaml の cgroup_parent（/fukyou/<サービス名>）からサービス名を取る
+      - source_labels: [id]
+        regex: /fukyou/([^/]+)/[0-9a-f]+
+        target_label: service
+      # compose のサービスではないもの（cgroup の親など）は使わないので捨てる
+      - source_labels: [service]
+        regex: ""
+        action: drop
+
+  - job_name: pushgateway
+    # 定期処理が送った batch ラベルを、Pushgateway のラベルで上書きしない
+    honor_labels: true
+    static_configs:
+      - targets: ["pushgateway:9091"]
+
+  - job_name: api
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ["http://app:3000/up"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

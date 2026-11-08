@@ -76,6 +76,35 @@ docker compose exec app ruby bin/rails db:drop db:create db:migrate
 curl -I -H "Range: bytes=0-1023" "<mp3_url>"   # 206 Partial Content が返れば Range で読める
 ```
 
+## 監視（SRE）
+
+`docker compose up` で、監視の仕組み（`sre/`）も一緒に起動します。管理画面は Grafana の `http://localhost:3001` です（ログインなし）。
+
+| コンテナ | 役割 |
+| --- | --- |
+| `prometheus` | メトリクスを集め、`sre/prometheus/alerts.yml` の閾値でアラートを判定する（`http://localhost:9090`） |
+| `cadvisor` | コンテナごとの CPU・メモリと、その上限 |
+| `pushgateway` | 定期処理（`wind:fetch`・`balloons:move`）が1回ごとに送る成否・かかった秒数 |
+| `blackbox` | API の `/up` に応答があるか、応答時間 |
+| `loki`・`alloy` | 全コンテナの標準出力のログ（3日分） |
+| `grafana` | 管理画面。ダッシュボード「推し風 SRE」と、Alerting の画面でアラートを見る |
+
+- 各コンテナの CPU とメモリの上限は、`compose.yaml` と `sre/compose.yaml` の `deploy.resources.limits` に書いています
+- アラートは通知せず、管理画面で見ます。閾値は次のとおりです
+
+| アラート | 条件 |
+| --- | --- |
+| `ContainerHighCpu` | CPU が上限の80%を超えて2分続く |
+| `ContainerHighMemory` | メモリが上限の90%を超えて2分続く（上限に達すると強制終了される） |
+| `ContainerMissing` | app・wind・balloons・db・redis・minio のどれかが1分以上見えない |
+| `BatchStalled` | `balloons:move` が60秒、`wind:fetch` が5分、成功していない |
+| `BatchFailing` | 定期処理が直近5分に1回でも失敗した |
+| `BatchOverrunning` | `balloons:move` の1回が5秒の間隔を超えて1分続く |
+| `ApiDown` | `/up` が1分以上応答しない |
+| `ApiSlow` | `/up` の応答に1秒以上かかる状態が5分続く |
+
+Docker Desktop は containerd のイメージストアを使うため、cAdvisor からは compose のサービス名が見えません。そこで `cgroup_parent` でサービスごとに cgroup を `/fukyou/<サービス名>` に分け、その名前からサービスを見分けています。サービスを足したときは `cgroup_parent` も足してください。
+
 ## API 仕様（Swagger UI）
 
 API 仕様は `backend/openapi/swagger.yml` にあります。リポジトリ直下で次を実行し、`http://localhost:8080` を開くと Swagger UI で読めます。

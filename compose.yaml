@@ -1,3 +1,10 @@
+# 監視の仕組み（Prometheus・Grafana など）。http://localhost:3001 で見る
+include:
+  - sre/compose.yaml
+
+# コンテナごとの CPU とメモリの上限は deploy.resources.limits に書く。Docker Desktop の割り当て（約8GB）を1つのコンテナが使い切らないように
+# cgroup_parent でサービスごとに cgroup を分けるのは、cAdvisor がその名前からサービスを見分けるため（Docker Desktop の containerd 経由では compose のラベルが見えない）
+
 x-rails: &rails
   image: ruby:3.4
   working_dir: /app
@@ -9,10 +16,12 @@ x-rails: &rails
     DB_USERNAME: app
     DB_PASSWORD: local_dev_password
     REDIS_URL: redis://redis:6379/1
+    PUSHGATEWAY_URL: http://pushgateway:9091
     SPEED_SCALE: "1"
 
 services:
   app:
+    cgroup_parent: /fukyou/app
     <<: *rails
     image: fukyou-app-dev
     build:
@@ -40,8 +49,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 60
+    deploy:
+      resources:
+        # 曲のアップロードで ffmpeg が音声を変換する分を見込む
+        limits: { cpus: "2", memory: 1G }
 
   wind:
+    cgroup_parent: /fukyou/wind
     <<: *rails
     # gem のインストールと DB の準備は app に任せる。同じボリュームへ同時にインストールすると壊れるため
     depends_on:
@@ -49,16 +63,24 @@ services:
         condition: service_healthy
     command: ["ruby", "bin/rails", "wind:fetch"]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 512M }
 
   balloons:
+    cgroup_parent: /fukyou/balloons
     <<: *rails
     depends_on:
       app:
         condition: service_healthy
     command: ["ruby", "bin/rails", "balloons:move"]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "1", memory: 512M }
 
   db:
+    cgroup_parent: /fukyou/db
     image: postgres:17
     environment:
       POSTGRES_USER: app
@@ -71,9 +93,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits: { cpus: "1", memory: 1G }
 
   minio:
     # 公式のイメージを使わないのは、コミュニティ版の配布が止まり、ソースしか公開されていないから
+    cgroup_parent: /fukyou/minio
     build:
       context: .
       dockerfile: Dockerfile.minio
@@ -93,14 +119,21 @@ services:
         # Rails が署名付き URL に入れるホスト名。Mac（シミュレーター）からも同じ名前で届く
         aliases:
           - minio.localhost
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 512M }
 
   redis:
+    cgroup_parent: /fukyou/redis
     image: redis:7.4
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
 
 volumes:
   gems:
