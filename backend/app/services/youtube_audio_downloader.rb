@@ -13,6 +13,8 @@ class YoutubeAudioDownloader
         "--ignore-config",
         "--no-playlist",
         "--no-progress",
+        "--write-thumbnail",
+        "--convert-thumbnails", "jpg",
         "--match-filters", "!is_live",
         "-x",
         "--audio-format", "mp3",
@@ -38,7 +40,12 @@ class YoutubeAudioDownloader
         raise Error, "変換後の音声は20MiB以内にしてください"
       end
 
-      yield path
+      thumbnail_path = File.join(directory, "audio.jpg")
+      unless File.file?(thumbnail_path) && File.size(thumbnail_path).positive?
+        raise Error, "サムネイル画像を取得できませんでした"
+      end
+
+      yield path, thumbnail_path
     end
   end
 end

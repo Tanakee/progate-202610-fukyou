@@ -186,9 +186,20 @@ paths:
 
         音声ファイルを1曲アップロードします。上限は20MBです。
         サーバーが128kbpsの固定ビットレートのmp3に変換し、ジャケット画像を除いて保存します。
+        JSONでyoutube_urlを送る場合は、YouTubeの音声とサムネイル画像を取得します。
+        サムネイルはJPEGで保存し、レスポンスのthumbnail_urlから取得できます。
       requestBody:
         required: true
         content:
+          application/json:
+            schema:
+              type: object
+              required: [youtube_url]
+              properties:
+                youtube_url:
+                  type: string
+                  format: uri
+                  example: https://youtu.be/U6BDbXIah-Y
           multipart/form-data:
             schema:
               type: object
@@ -245,6 +256,26 @@ paths:
                 $ref: '#/components/schemas/Track'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /tracks/{id}/thumbnail:
+    get:
+      tags: [曲]
+      operationId: getTrackThumbnail
+      summary: 保存したサムネイル画像を返す
+      description: YouTubeから取得した画像をJPEGで保存し、Rails経由で返します。認証は不要です。
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/TrackId'
+      responses:
+        '200':
+          description: サムネイル画像
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: 曲またはサムネイルが存在しません
 
   /tracks/{id}/audio:
     get:
@@ -701,7 +732,7 @@ components:
 
     Track:
       type: object
-      required: [id, title, artist, mp3_url]
+      required: [id, title, artist, mp3_url, thumbnail_url]
       properties:
         id:
           type: integer
@@ -722,6 +753,12 @@ components:
             Rails経由でmp3を取得するURL。Rangeリクエスト（206）に対応する。
             mp3は128kbpsの固定ビットレートで、ジャケット画像を含まない
           example: http://localhost:3000/tracks/7/audio
+        thumbnail_url:
+          type: string
+          format: uri
+          nullable: true
+          description: 保存したYouTubeサムネイル画像のURL。画像のない既存曲や音声直接アップロードではnull。
+          example: http://localhost:3000/tracks/7/thumbnail
 
     Balloon:
       type: object

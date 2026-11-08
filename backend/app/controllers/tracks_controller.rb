@@ -1,5 +1,5 @@
 class TracksController < ApplicationController
-  skip_before_action :authenticate, only: [ :show, :audio ]
+  skip_before_action :authenticate, only: [ :show, :audio, :thumbnail ]
 
   def show
     @track = Track.find_by(id: params[:id])
@@ -12,7 +12,16 @@ class TracksController < ApplicationController
   end
 
   def mine
-    @tracks = current_user.tracks.order(id: :desc)
+    @tracks = current_user.tracks.with_attached_thumbnail.order(id: :desc)
+  end
+
+  # Docker内部のストレージURLへリダイレクトせず、保存した画像を返す。
+  def thumbnail
+    track = Track.find(params[:id])
+    raise ActiveRecord::RecordNotFound unless track.thumbnail.attached?
+
+    send_data track.thumbnail.download, type: "image/jpeg", disposition: :inline,
+      filename: track.thumbnail.filename.to_s
   end
 
   # 音源をRails経由で返し、実機からMinIOへ直接つながなくて済むようにする。
@@ -110,10 +119,10 @@ class TracksController < ApplicationController
       input = params.permit(:youtube_url)
       info = YoutubeVideoInfo.fetch(input[:youtube_url])
 
-      YoutubeAudioDownloader.with_audio(info) do |path|
+      YoutubeAudioDownloader.with_audio(info) do |path, thumbnail_path|
         save_track(path, title: info["track"].presence || info["title"].presence || "タイトル不明",
                          artist: info["artist"].presence || info["uploader"].presence || "不明",
-                         filename: "#{info.fetch('id')}.mp3")
+                         filename: "#{info.fetch('id')}.mp3", thumbnail_path:)
       end
 
       render :show, status: :created
@@ -127,11 +136,19 @@ class TracksController < ApplicationController
         message: "曲情報を保存できませんでした"
     end
 
-    def save_track(path, title:, artist:, filename:)
+    def save_track(path, title:, artist:, filename:, thumbnail_path: nil)
       File.open(path, "rb") do |file|
         @track = current_user.tracks.new(title:, artist:)
         @track.audio.attach(io: file, filename:, content_type: "audio/mpeg", identify: false)
-        @track.save!
+        if thumbnail_path
+          File.open(thumbnail_path, "rb") do |image|
+            @track.thumbnail.attach(io: image, filename: "#{File.basename(filename, '.*')}.jpg",
+              content_type: "image/jpeg", identify: false)
+            @track.save!
+          end
+        else
+          @track.save!
+        end
       end
     end
 end

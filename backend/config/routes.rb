@@ -24,6 +24,7 @@ Rails.application.routes.draw do
 
     resources :tracks, only: [ :create, :show ] do
       get :audio, on: :member
+      get :thumbnail, on: :member
     end
 
     resources :balloons, only: :create do
