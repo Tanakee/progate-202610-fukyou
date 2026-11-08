@@ -7,6 +7,7 @@ struct MainView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(MyBalloonStore.self) private var myBalloon
     @Environment(PopStore.self) private var pops
+    @Environment(ArtworkColors.self) private var artworkColors
     @State private var position = MapCameraPosition.userLocation(
         fallback: .camera(MapCamera(centerCoordinate: .init(latitude: 36.5, longitude: 137.5), distance: 3_000_000))
     )
@@ -14,8 +15,7 @@ struct MainView: View {
     @State private var hasCentered = false
     @State private var showsAccount = false
     @State private var showsLaunch = false
-    @State private var confirmsCollect = false
-    @State private var collectMessage: String?
+    @State private var collectTarget: CollectTarget?
     @State private var showsSky = false
     /// 地図を動かし終えたときの視点。右上のボタンで傾きや向きを変えるときの基準にする
     @State private var camera: MapCamera?
@@ -67,7 +67,7 @@ struct MainView: View {
                 }
                 PlaybackBar(isListening: $isListening) {
                     if auth.isSignedIn {
-                        confirmsCollect = true
+                        confirmCollect()
                     } else {
                         showsAccount = true
                     }
@@ -76,15 +76,8 @@ struct MainView: View {
             .padding(.horizontal)
             .padding(.bottom, 4)
         }
-        .confirmationDialog("この曲を今日の1曲として回収しますか？", isPresented: $confirmsCollect, titleVisibility: .visible) {
-            Button("回収する") {
-                Task { await collect() }
-            }
-        } message: {
-            Text("回収は1日1回です。回収した風船はみんなの空から消え、お気に入りに残ります。")
-        }
-        .alert(collectMessage ?? "", isPresented: Binding(get: { collectMessage != nil }, set: { if !$0 { collectMessage = nil } })) {
-            Button("OK") {}
+        .sheet(item: $collectTarget) { target in
+            CollectSheet(target: target)
         }
         .sheet(isPresented: $showsLaunch) {
             LaunchSheet()
@@ -149,14 +142,11 @@ struct MainView: View {
         }
     }
 
-    private func collect() async {
-        do {
-            if let favorite = try await session.collectCurrent() {
-                collectMessage = "「\(favorite.track.title)」を回収しました"
-            }
-        } catch {
-            collectMessage = error.localizedDescription
-        }
+    /// 回収の確認を出す。確認を出している間に流す風船が切り替わっても、このときの風船を回収する
+    private func confirmCollect() {
+        guard let balloonID = session.currentBalloonID, let track = session.currentTrack else { return }
+        let color = artworkColors.color(for: track.thumbnailURL) ?? Theme.balloonColor(for: balloonID)
+        collectTarget = CollectTarget(balloonID: balloonID, track: track, color: color)
     }
 
     /// 自分の風船へ地図を寄せる。地図の主役は利用者なので、ボタンを押したときだけ寄せる。
