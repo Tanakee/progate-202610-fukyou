@@ -364,10 +364,8 @@ private struct PlaybackBar: View {
         HStack(spacing: 12) {
             Artwork(url: session.currentTrack?.thumbnailURL, color: accent, isPlaying: isListening && session.currentTrack != nil)
             VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(Theme.font(17, .bold, relativeTo: .headline))
+                MarqueeText(text: title, font: Theme.font(17, .bold, relativeTo: .headline))
                     .foregroundStyle(Theme.ink)
-                    .lineLimit(1)
                 Text(subtitle)
                     .font(Theme.font(13, .medium, relativeTo: .subheadline))
                     .foregroundStyle(Theme.ink.opacity(0.6))
