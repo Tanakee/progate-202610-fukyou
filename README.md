@@ -92,7 +92,7 @@ node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-mod
 | コンテナ | rake タスク | 内容 |
 | --- | --- | --- |
 | `wind` | `wind:fetch` | Open-Meteo から、日本周辺の1度格子（837地点）の風（地上10m、m/s）を、取得がいちばん古い100地点ずつ20分ごとに取得して `wind_grid` に保存する。一周は約3時間。まだ一度も取得していない地点があるうちは1分ごとに取得する |
-| `balloons` | `balloons:move` | 保存済みの風データで、飛行中の風船を5秒ごとに動かし、`/ws` の `BalloonsChannel` へ `balloons.snapshot` を配信する。日本の排他的経済水域（EEZ）の外へ出た風船は割れる（`status` が `lost` になる） |
+| `balloons` | `balloons:move` | 保存済みの風データで、飛行中の風船を5秒ごとに動かし、`/ws` の `BalloonsChannel` へ `balloons.snapshot` を配信する。日本の排他的経済水域（EEZ）の外へ出た風船は割れる（`status` が `lost` になる）。港から10km以内に来た風船は船に乗り、太平洋側の港からは日本海側の港へ、日本海側の港からは太平洋側の港へ、風に関係なく1分で運ばれる |
 
 - Open-Meteo の無料枠は地点の数で数え、1分に600、1時間に5,000、1日に10,000までです。20分ごとに100地点なら1日7,200で収まります
 - 速度の倍率は `compose.yaml` の `SPEED_SCALE` で変えられます（変えたら `docker compose up -d` で作り直す）
@@ -105,3 +105,17 @@ node <archifyの場所>/archify/bin/archify.mjs render erd diagrams/erd-data-mod
 ### 日本の排他的経済水域のデータ
 
 `backend/config/japan_eez.json` は、[Marine Regions](https://www.marineregions.org/) の Maritime Boundaries and Exclusive Economic Zones（200NM）version 12（CC BY 4.0）から作りました。日本の EEZ に加え、北方領土・尖閣諸島・竹島周辺の主張の重なる海域と、日韓の共同開発区域を含みます。EEZ の形は陸地が穴になっているので外側の輪だけを使い（陸地も中に含める）、0.02度（約2 km）で間引いています。
+
+### 船の航路のデータ
+
+`backend/config/sea_routes.json` は、次の3つを持ちます。
+
+- **港（229港）**：[国土数値情報（港湾間流通量・海上経路データ）](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-S10a-v1_2.html)の平成28年度の海上経路（国土交通省、商用利用可）で、日本の港どうしの航路が出入りする港です（同じ座標で名前だけ違う博多と福岡は、博多だけ残しています）。北海道の西岸・新潟・佐渡・敦賀・舞鶴・玄界灘・対馬・壱岐の25港を日本海側、それ以外（瀬戸内・東シナ海・南西諸島を含む）を太平洋側としています
+- **中継点（124点）**：日本を囲む海の上に手で置いた点です。津軽海峡・関門海峡・瀬戸内も通ります
+- **つながり**：港と中継点のうち、[Natural Earth](https://www.naturalearthdata.com/)（パブリックドメイン）の1:10mの陸地を横切らない組です。この陸地の図では閉じてしまう関門海峡と友ヶ島水道は、手でつないでいます
+
+船に乗ると、反対側の港をランダムに選び、つながりをたどる最短の道を進みます。
+
+- 降りた港と、その港から10km以内の港では、次に別の港へ着くまで乗り直しません
+- 風船を飛ばした場所から10km以内の港では乗りません
+- 小さな島や細い水路は陸地の図にないので、道がかすめることがあります
