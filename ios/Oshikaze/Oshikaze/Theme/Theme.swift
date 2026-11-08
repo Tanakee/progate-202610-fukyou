@@ -82,16 +82,16 @@ struct SoftCard: ViewModifier {
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)
+                    // 文字が読みやすいよう、ほぼ白にする。曲ごとの色はふちと影にだけ、ほんのり出す
                     .overlay {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(LinearGradient(colors: [tint.opacity(0.28), .white.opacity(0.75)],
-                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .fill(.white.opacity(0.88))
                     }
                     .overlay {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(.white.opacity(0.9), lineWidth: 1.5)
+                            .strokeBorder(tint.opacity(0.35), lineWidth: 1.5)
                     }
-                    .shadow(color: tint.opacity(0.35), radius: 16, y: 8)
+                    .shadow(color: tint.opacity(0.25), radius: 14, y: 6)
             }
     }
 }

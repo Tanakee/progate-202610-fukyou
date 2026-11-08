@@ -17,6 +17,8 @@ struct MainView: View {
     @State private var confirmsCollect = false
     @State private var collectMessage: String?
     @State private var showsSky = false
+    /// 地図を動かし終えたときの視点。右上のボタンで傾きや向きを変えるときの基準にする
+    @State private var camera: MapCamera?
 
     /// 設計書の「前面にある間は30秒ごとに /me/balloons を読む」
     private static let myBalloonRefreshInterval: Duration = .seconds(30)
@@ -34,13 +36,16 @@ struct MainView: View {
         }
         // 風船が主役なので、地図は色を落とし、お店などの印も消す
         .mapStyle(.standard(elevation: .realistic, emphasis: .muted, pointsOfInterest: .excludingAll))
-        .mapControls {
-            MapUserLocationButton()
-            MapCompass()
-            MapPitchToggle()
+        // 標準の地図ボタンは見た目がそろわないので出さず、右上に同じ丸ボタンで作る
+        .mapControls {}
+        .onMapCameraChange(frequency: .onEnd) { context in
+            camera = context.camera
         }
-        .overlay(alignment: .top) {
-            SkyTint()
+        .overlay(alignment: .topTrailing) {
+            MapButtons(camera: camera, userLocation: session.location.coordinate) { newCamera in
+                withAnimation(.easeInOut(duration: 0.8)) { position = .camera(newCamera) }
+            }
+            .padding(.trailing)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(alignment: .trailing, spacing: 12) {
@@ -164,16 +169,58 @@ struct MainView: View {
     }
 }
 
-/// 時間帯に合わせた空の色を、地図の上の方に薄く重ねる。1分ごとに色を選び直す
-private struct SkyTint: View {
+/// 右上の地図のボタン。現在地へ戻る、2D と 3D を切り替える、北を上に戻す（回したときだけ出す）
+private struct MapButtons: View {
+    let camera: MapCamera?
+    let userLocation: CLLocationCoordinate2D?
+    let move: (MapCamera) -> Void
+
+    private var isTilted: Bool { (camera?.pitch ?? 0) > 5 }
+    private var isRotated: Bool {
+        let heading = camera?.heading ?? 0
+        return min(heading, 360 - heading) > 3
+    }
+
     var body: some View {
-        TimelineView(.everyMinute) { context in
-            LinearGradient(colors: Theme.skyColors(at: context.date).map { $0.opacity(0.55) } + [.clear],
-                           startPoint: .top, endPoint: .bottom)
-                .frame(height: 260)
+        VStack(spacing: 10) {
+            Button {
+                guard let userLocation else { return }
+                move(MapCamera(centerCoordinate: userLocation, distance: camera?.distance ?? 400_000,
+                               heading: camera?.heading ?? 0, pitch: camera?.pitch ?? 50))
+            } label: {
+                RoundIcon(systemName: "location.fill", size: 44)
+            }
+            .accessibilityLabel("現在地へ戻る")
+
+            Button {
+                guard let camera else { return }
+                move(MapCamera(centerCoordinate: camera.centerCoordinate, distance: camera.distance,
+                               heading: camera.heading, pitch: isTilted ? 0 : 50))
+            } label: {
+                Text(isTilted ? "2D" : "3D")
+                    .font(Theme.font(15, .bold))
+                    .foregroundStyle(Theme.sky)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(.white))
+                    .shadow(color: Theme.sky.opacity(0.35), radius: 8, y: 4)
+            }
+            .accessibilityLabel(isTilted ? "真上から見る" : "傾けて見る")
+
+            if isRotated, let camera {
+                Button {
+                    move(MapCamera(centerCoordinate: camera.centerCoordinate, distance: camera.distance,
+                                   heading: 0, pitch: camera.pitch))
+                } label: {
+                    // 針は北を指すように、地図の向きと逆に回す
+                    RoundIcon(systemName: "location.north.fill", size: 44, color: Theme.heart)
+                        .rotationEffect(.degrees(-camera.heading))
+                }
+                .accessibilityLabel("北を上にする")
+                .transition(.scale.combined(with: .opacity))
+            }
         }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
+        .buttonStyle(.bouncy)
+        .animation(.spring, value: isRotated)
     }
 }
 
