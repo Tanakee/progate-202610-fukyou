@@ -5204,7 +5204,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1490 888" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-node-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
+      <svg viewBox="0 0 1500 888" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-node-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
         <title id="archify-diagram-title">実行時の構成</title>
         <desc id="archify-diagram-description">docker compose のアプリと監視（sre/）のコンテナ、そのつながり</desc>
         <!-- Definitions -->
@@ -5295,36 +5295,40 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <path data-edge-from="balloons" data-edge-to="db" data-edge-label="全風船を1文で更新" data-edge-key="8" data-edge-id="balloons-db" data-composition-points="930,237;844,237;844,453;820,453" data-composition-crossover="halo" data-composition-independent="true" d="M 930 237 L 852 237 Q 844 237 844 245 L 844 445 Q 844 453 836 453 L 820 453" class="a-default" data-animate="edge" style="--step:8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:9">
-          <path data-graph-role="automatic-crossover-underlay" d="M 930 467 L 820 467" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="wind" data-edge-to="db" data-edge-label="風を保存" data-edge-key="9" data-edge-id="wind-db" data-composition-points="930,467;820,467" data-composition-crossover="halo" data-composition-independent="true" d="M 930 467 L 820 467" class="a-default" data-animate="edge" style="--step:9" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 1044 270 L 1044 286 Q 1044 294 1052 294 L 1168 294 Q 1176 294 1176 286 L 1176 234 Q 1176 226 1184 226 L 1200 226" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="balloons" data-edge-to="mlit" data-edge-label="港と航路（取り込み済み）" data-edge-key="9" data-edge-id="balloons-mlit" data-composition-points="1044,270;1044,294;1176,294;1176,226;1200,226" data-composition-crossover="halo" data-composition-independent="true" d="M 1044 270 L 1044 286 Q 1044 294 1052 294 L 1168 294 Q 1176 294 1176 286 L 1176 234 Q 1176 226 1184 226 L 1200 226" class="a-dashed" data-animate="edge" style="--step:9" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:10">
-          <path data-graph-role="automatic-crossover-underlay" d="M 1030 420 L 1030 404 Q 1030 396 1038 396 L 1168 396 Q 1176 396 1176 404 L 1176 448 Q 1176 456 1184 456 L 1200 456" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="wind" data-edge-to="om" data-edge-label="HTTPS で風を取得" data-edge-key="10" data-edge-id="wind-om" data-composition-points="1030,420;1030,396;1176,396;1176,456;1200,456" data-composition-crossover="halo" data-composition-independent="true" d="M 1030 420 L 1030 404 Q 1030 396 1038 396 L 1168 396 Q 1176 396 1176 404 L 1176 448 Q 1176 456 1184 456 L 1200 456" class="a-dashed" data-animate="edge" style="--step:10" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 930 467 L 820 467" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="wind" data-edge-to="db" data-edge-label="風を保存" data-edge-key="10" data-edge-id="wind-db" data-composition-points="930,467;820,467" data-composition-crossover="halo" data-composition-independent="true" d="M 930 467 L 820 467" class="a-default" data-animate="edge" style="--step:10" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:11">
-          <path data-graph-role="automatic-crossover-underlay" d="M 930 251 L 914 251 Q 906 251 906 259 L 906 745 Q 906 753 914 753 L 930 753" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="balloons" data-edge-to="collect" data-edge-label="1回ごとの成否を push" data-edge-key="11" data-edge-id="balloons-collect" data-composition-points="930,251;906,251;906,753;930,753" data-composition-crossover="halo" data-composition-independent="true" d="M 930 251 L 914 251 Q 906 251 906 259 L 906 745 Q 906 753 914 753 L 930 753" class="a-dashed" data-animate="edge" style="--step:11" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 1030 420 L 1030 404 Q 1030 396 1038 396 L 1168 396 Q 1176 396 1176 404 L 1176 448 Q 1176 456 1184 456 L 1200 456" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="wind" data-edge-to="om" data-edge-label="HTTPS で風を取得" data-edge-key="11" data-edge-id="wind-om" data-composition-points="1030,420;1030,396;1176,396;1176,456;1200,456" data-composition-crossover="halo" data-composition-independent="true" d="M 1030 420 L 1030 404 Q 1030 396 1038 396 L 1168 396 Q 1176 396 1176 404 L 1176 448 Q 1176 456 1184 456 L 1200 456" class="a-dashed" data-animate="edge" style="--step:11" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:12">
-          <path data-graph-role="automatic-crossover-underlay" d="M 1130 484 L 1156 484 Q 1164 484 1164 492 L 1164 720" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="wind" data-edge-to="collect" data-edge-label="成否を push" data-edge-key="12" data-edge-id="wind-collect" data-composition-points="1130,484;1164,484;1164,720" data-composition-crossover="halo" data-composition-independent="true" d="M 1130 484 L 1156 484 Q 1164 484 1164 492 L 1164 720" class="a-dashed" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 930 251 L 914 251 Q 906 251 906 259 L 906 745 Q 906 753 914 753 L 930 753" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="balloons" data-edge-to="collect" data-edge-label="1回ごとの成否を push" data-edge-key="12" data-edge-id="balloons-collect" data-composition-points="930,251;906,251;906,753;930,753" data-composition-crossover="halo" data-composition-independent="true" d="M 930 251 L 914 251 Q 906 251 906 259 L 906 745 Q 906 753 914 753 L 930 753" class="a-dashed" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:13">
-          <path data-graph-role="automatic-crossover-underlay" d="M 1055 720 L 1055 518 Q 1055 510 1047 510 L 443 510 Q 435 510 435 502 L 435 300" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="collect" data-edge-to="app" data-edge-label="/up を叩く" data-edge-key="13" data-edge-id="collect-app" data-composition-points="1055,720;1055,510;435,510;435,300" data-composition-crossover="halo" data-composition-independent="true" d="M 1055 720 L 1055 518 Q 1055 510 1047 510 L 443 510 Q 435 510 435 502 L 435 300" class="a-dashed" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 1062 500 L 1062 720" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="wind" data-edge-to="collect" data-edge-label="成否を push" data-edge-key="13" data-edge-id="wind-collect" data-composition-points="1062,500;1062,720" data-composition-crossover="halo" data-composition-independent="true" d="M 1062 500 L 1062 720" class="a-dashed" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:14">
-          <path data-graph-role="automatic-crossover-underlay" d="M 930 767 L 820 767" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="collect" data-edge-to="store" data-edge-label="メトリクス・ログ" data-edge-key="14" data-edge-id="collect-store" data-composition-points="930,767;820,767" data-composition-crossover="halo" data-composition-independent="true" d="M 930 767 L 820 767" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 1048 720 L 1048 518 Q 1048 510 1040 510 L 443 510 Q 435 510 435 502 L 435 300" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="collect" data-edge-to="app" data-edge-label="/up を叩く" data-edge-key="14" data-edge-id="collect-app" data-composition-points="1048,720;1048,510;435,510;435,300" data-composition-crossover="halo" data-composition-independent="true" d="M 1048 720 L 1048 518 Q 1048 510 1040 510 L 443 510 Q 435 510 435 502 L 435 300" class="a-dashed" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:15">
-          <path data-graph-role="automatic-crossover-underlay" d="M 530 760 L 640 760" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="grafana" data-edge-to="store" data-edge-label="問い合わせ" data-edge-key="15" data-edge-id="grafana-store" data-composition-points="530,760;640,760" data-composition-crossover="halo" data-composition-independent="true" d="M 530 760 L 640 760" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 930 767 L 820 767" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="collect" data-edge-to="store" data-edge-label="メトリクス・ログ" data-edge-key="15" data-edge-id="collect-store" data-composition-points="930,767;820,767" data-composition-crossover="halo" data-composition-independent="true" d="M 930 767 L 820 767" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:16">
+          <path data-graph-role="automatic-crossover-underlay" d="M 530 760 L 640 760" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="grafana" data-edge-to="store" data-edge-label="問い合わせ" data-edge-key="16" data-edge-id="grafana-store" data-composition-points="530,760;640,760" data-composition-crossover="halo" data-composition-independent="true" d="M 530 760 L 640 760" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:17">
           <path data-graph-role="automatic-crossover-underlay" d="M 130 792 L 130 808 Q 130 816 138 816 L 308 816 Q 316 816 316 808 L 316 768 Q 316 760 324 760 L 340 760" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="admin" data-edge-to="grafana" data-edge-label="ダッシュボード・監視の ON/OFF" data-edge-key="16" data-edge-id="admin-grafana" data-composition-points="130,792;130,816;316,816;316,760;340,760" data-composition-crossover="halo" data-composition-independent="true" d="M 130 792 L 130 808 Q 130 816 138 816 L 308 816 Q 316 816 316 808 L 316 768 Q 316 760 324 760 L 340 760" class="a-emphasis" data-animate="edge" style="--step:12" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+          <path data-edge-from="admin" data-edge-to="grafana" data-edge-label="ダッシュボード・監視の ON/OFF" data-edge-key="17" data-edge-id="admin-grafana" data-composition-points="130,792;130,816;316,816;316,760;340,760" data-composition-crossover="halo" data-composition-independent="true" d="M 130 792 L 130 808 Q 130 816 138 816 L 308 816 Q 316 816 316 808 L 316 768 Q 316 760 324 760 L 340 760" class="a-emphasis" data-animate="edge" style="--step:12" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         </g>
 
         <!-- Components -->
@@ -5454,7 +5458,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-wind" data-node-id="wind" data-node-label="風データ取得バッチ" tabindex="0" role="button" aria-label="Focus 風データ取得バッチ, rails wind:fetch（1分）, docker compose（アプリ）" aria-pressed="false" data-node-kind="backend" data-node-sublabel="rails wind:fetch（1分）" data-node-context="docker compose（アプリ）">
           <title>風データ取得バッチ · rails wind:fetch（1分） · docker compose（アプリ）</title>
           <rect x="930" y="420" width="200" height="80" rx="8" class="c-mask"/>
-          <rect x="930" y="420" width="200" height="80" rx="8" class="c-backend" data-animate="node" style="--step:9" stroke-width="1.5"/>
+          <rect x="930" y="420" width="200" height="80" rx="8" class="c-backend" data-animate="node" style="--step:10" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(936 426) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
@@ -5465,7 +5469,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <g id="node-om" data-node-id="om" data-node-label="Open-Meteo（オープンデータ）" tabindex="0" role="button" aria-label="Focus Open-Meteo（オープンデータ）, 837地点の風, Architecture component" aria-pressed="false" data-node-kind="external" data-node-sublabel="837地点の風" data-node-context="Architecture component">
           <title>Open-Meteo（オープンデータ） · 837地点の風 · Architecture component</title>
           <rect x="1200" y="420" width="250" height="72" rx="8" class="c-mask"/>
-          <rect x="1200" y="420" width="250" height="72" rx="8" class="c-external" data-animate="node" style="--step:11" stroke-width="1.5"/>
+          <rect x="1200" y="420" width="250" height="72" rx="8" class="c-external" data-animate="node" style="--step:12" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1206 426) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
@@ -5521,6 +5525,18 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="context" x="1055" y="774" class="t-muted" font-size="9" text-anchor="middle">cAdvisor・Pushgateway・Blackbox・Alloy</text>
         </g>
 
+        <g id="node-mlit" data-node-id="mlit" data-node-label="国土数値情報（オープンデータ）" tabindex="0" role="button" aria-label="Focus 国土数値情報（オープンデータ）, 国土交通省 港湾間流通量・海上経路, Architecture component" aria-pressed="false" data-node-kind="external" data-node-sublabel="国土交通省 港湾間流通量・海上経路" data-node-context="Architecture component">
+          <title>国土数値情報（オープンデータ） · 国土交通省 港湾間流通量・海上経路 · Architecture component</title>
+          <rect x="1200" y="190" width="260" height="72" rx="8" class="c-mask"/>
+          <rect x="1200" y="190" width="260" height="72" rx="8" class="c-external" data-animate="node" style="--step:10" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1206 196) scale(0.6875)">
+            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1330" y="224" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">国土数値情報（オープンデータ）</text>
+        <text data-detail="context" x="1330" y="240" class="t-muted" font-size="9" text-anchor="middle">国土交通省 港湾間流通量・海上経路</text>
+        </g>
+
         <!-- Connection labels -->
         <g data-detail="context" data-edge-from="ios" data-edge-to="app" data-edge-label="REST・WebSocket /ws" data-edge-key="0" data-edge-id="ios-app">
           <rect x="172.4" y="296" width="101.2" height="14" rx="3" class="c-mask"/>
@@ -5558,53 +5574,57 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <rect x="798.2" y="325" width="91.6" height="14" rx="3" class="c-mask"/>
           <text x="844" y="335" class="t-edge-default" font-size="8" text-anchor="middle">全風船を1文で更新</text>
         </g>
-        <g data-detail="context" data-edge-from="wind" data-edge-to="db" data-edge-label="風を保存" data-edge-key="9" data-edge-id="wind-db">
+        <g data-detail="context" data-edge-from="balloons" data-edge-to="mlit" data-edge-label="港と航路（取り込み済み）" data-edge-key="9" data-edge-id="balloons-mlit">
+          <rect x="1047.4" y="274" width="125.19999999999999" height="14" rx="3" class="c-mask"/>
+          <text x="1110" y="284" class="t-edge-dashed" font-size="8" text-anchor="middle">港と航路（取り込み済み）</text>
+        </g>
+        <g data-detail="context" data-edge-from="wind" data-edge-to="db" data-edge-label="風を保存" data-edge-key="10" data-edge-id="wind-db">
           <rect x="850.8" y="447" width="48.4" height="14" rx="3" class="c-mask"/>
           <text x="875" y="457" class="t-edge-default" font-size="8" text-anchor="middle">風を保存</text>
         </g>
-        <g data-detail="context" data-edge-from="wind" data-edge-to="om" data-edge-label="HTTPS で風を取得" data-edge-key="10" data-edge-id="wind-om">
+        <g data-detail="context" data-edge-from="wind" data-edge-to="om" data-edge-label="HTTPS で風を取得" data-edge-key="11" data-edge-id="wind-om">
           <rect x="1059.6" y="376" width="86.8" height="14" rx="3" class="c-mask"/>
           <text x="1103" y="386" class="t-edge-dashed" font-size="8" text-anchor="middle">HTTPS で風を取得</text>
         </g>
-        <g data-detail="context" data-edge-from="balloons" data-edge-to="collect" data-edge-label="1回ごとの成否を push" data-edge-key="11" data-edge-id="balloons-collect">
+        <g data-detail="context" data-edge-from="balloons" data-edge-to="collect" data-edge-label="1回ごとの成否を push" data-edge-key="12" data-edge-id="balloons-collect">
           <rect x="912" y="369.5" width="106" height="14" rx="3" class="c-mask"/>
           <text x="965" y="379.5" class="t-edge-dashed" font-size="8" text-anchor="middle">1回ごとの成否を push</text>
         </g>
-        <g data-detail="context" data-edge-from="wind" data-edge-to="collect" data-edge-label="成否を push" data-edge-key="12" data-edge-id="wind-collect">
-          <rect x="1132.6" y="582" width="62.8" height="14" rx="3" class="c-mask"/>
-          <text x="1164" y="592" class="t-edge-dashed" font-size="8" text-anchor="middle">成否を push</text>
+        <g data-detail="context" data-edge-from="wind" data-edge-to="collect" data-edge-label="成否を push" data-edge-key="13" data-edge-id="wind-collect">
+          <rect x="1068" y="603" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="1099.4" y="613" class="t-edge-dashed" font-size="8" text-anchor="middle">成否を push</text>
         </g>
-        <g data-detail="context" data-edge-from="collect" data-edge-to="app" data-edge-label="/up を叩く" data-edge-key="13" data-edge-id="collect-app">
-          <rect x="991" y="608" width="58" height="14" rx="3" class="c-mask"/>
-          <text x="1020" y="618" class="t-edge-dashed" font-size="8" text-anchor="middle">/up を叩く</text>
+        <g data-detail="context" data-edge-from="collect" data-edge-to="app" data-edge-label="/up を叩く" data-edge-key="14" data-edge-id="collect-app">
+          <rect x="984" y="608" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="1013" y="618" class="t-edge-dashed" font-size="8" text-anchor="middle">/up を叩く</text>
         </g>
-        <g data-detail="context" data-edge-from="collect" data-edge-to="store" data-edge-label="メトリクス・ログ" data-edge-key="14" data-edge-id="collect-store">
+        <g data-detail="context" data-edge-from="collect" data-edge-to="store" data-edge-label="メトリクス・ログ" data-edge-key="15" data-edge-id="collect-store">
           <rect x="831.6" y="777" width="86.8" height="14" rx="3" class="c-mask"/>
           <text x="875" y="787" class="t-edge-default" font-size="8" text-anchor="middle">メトリクス・ログ</text>
         </g>
-        <g data-detail="context" data-edge-from="grafana" data-edge-to="store" data-edge-label="問い合わせ" data-edge-key="15" data-edge-id="grafana-store">
+        <g data-detail="context" data-edge-from="grafana" data-edge-to="store" data-edge-label="問い合わせ" data-edge-key="16" data-edge-id="grafana-store">
           <rect x="556" y="740" width="58" height="14" rx="3" class="c-mask"/>
           <text x="585" y="750" class="t-edge-default" font-size="8" text-anchor="middle">問い合わせ</text>
         </g>
-        <g data-detail="context" data-edge-from="admin" data-edge-to="grafana" data-edge-label="ダッシュボード・監視の ON/OFF" data-edge-key="16" data-edge-id="admin-grafana">
+        <g data-detail="context" data-edge-from="admin" data-edge-to="grafana" data-edge-label="ダッシュボード・監視の ON/OFF" data-edge-key="17" data-edge-id="admin-grafana">
           <rect x="148.4" y="796" width="149.2" height="14" rx="3" class="c-mask"/>
           <text x="223" y="806" class="t-edge-emphasis" font-size="8" text-anchor="middle">ダッシュボード・監視の ON/OFF</text>
         </g>
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->
         <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="端末">
-          <rect data-graph-role="structural-frame-label-mask" x="24" y="199" width="33.07097014193548" height="17" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="28" y="212.61290422580646" class="t-cloud" font-size="9.612904225806451" font-weight="600">端末</text>
+          <rect data-graph-role="structural-frame-label-mask" x="24" y="199" width="33.225808851612896" height="17" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="28" y="212.67742035483872" class="t-cloud" font-size="9.67742035483871" font-weight="600">端末</text>
         </g>
 
         <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="region" data-composition-frame-label="docker compose（アプリ）">
-          <rect data-graph-role="structural-frame-label-mask" x="324" y="19" width="148.42582085161288" height="17" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="328" y="32.61290422580645" class="t-cloud" font-size="9.612904225806451" font-weight="600">docker compose（アプリ）</text>
+          <rect data-graph-role="structural-frame-label-mask" x="324" y="19" width="149.3548531096774" height="17" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="328" y="32.67742035483871" class="t-cloud" font-size="9.67742035483871" font-weight="600">docker compose（アプリ）</text>
         </g>
 
         <g data-graph-role="structural-frame-label" data-composition-frame-id="2" data-composition-frame-kind="region" data-composition-frame-label="docker compose（監視 sre/）">
-          <rect data-graph-role="structural-frame-label-mask" x="324" y="699" width="165.7290484580645" height="17" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="328" y="712.6129042258065" class="t-cloud" font-size="9.612904225806451" font-weight="600">docker compose（監視 sre/）</text>
+          <rect data-graph-role="structural-frame-label-mask" x="324" y="699" width="166.7742097483871" height="17" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="328" y="712.6774203548387" class="t-cloud" font-size="9.67742035483871" font-weight="600">docker compose（監視 sre/）</text>
         </g>
 
         <!-- Legend -->
@@ -5854,6 +5874,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>Open-Meteo：風データ取得バッチが、格子点ごとの風を HTTPS で取る</li>
+          <li>国土数値情報（国土交通省）：港湾間流通量・海上経路の港229か所を config/sea_routes.json に取り込み、風船同期バッチが港に着いた風船を船で運ぶのに使う</li>
           <li>YouTube：曲の登録で受け取った URL から、app が yt-dlp で mp3 を取り出す</li>
         </ul>
       </div>

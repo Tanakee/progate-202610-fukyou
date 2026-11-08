@@ -209,6 +209,20 @@
         250,
         80
       ]
+    },
+    {
+      "id": "mlit",
+      "type": "external",
+      "label": "国土数値情報（オープンデータ）",
+      "sublabel": "国土交通省 港湾間流通量・海上経路",
+      "pos": [
+        1200,
+        190
+      ],
+      "size": [
+        260,
+        72
+      ]
     }
   ],
   "boundaries": [
@@ -305,6 +319,13 @@
       "label": "全風船を1文で更新"
     },
     {
+      "id": "balloons-mlit",
+      "from": "balloons",
+      "to": "mlit",
+      "label": "港と航路（取り込み済み）",
+      "variant": "dashed"
+    },
+    {
       "id": "wind-db",
       "from": "wind",
       "to": "db",
@@ -390,6 +411,7 @@
       "title": "オープンデータ",
       "items": [
         "Open-Meteo：風データ取得バッチが、格子点ごとの風を HTTPS で取る",
+        "国土数値情報（国土交通省）：港湾間流通量・海上経路の港229か所を config/sea_routes.json に取り込み、風船同期バッチが港に着いた風船を船で運ぶのに使う",
         "YouTube：曲の登録で受け取った URL から、app が yt-dlp で mp3 を取り出す"
       ]
     }
