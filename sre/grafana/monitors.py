@@ -71,22 +71,25 @@ MONITORS.append(
 
 
 
-# ヘルスチェック（15秒ごと）が2回続けて失敗したらアラートにする。30秒の窓には2回分が入る。
+# ヘルスチェック（15秒ごと）が1回失敗したら保留中、2回続けて失敗したらアラートにする。
+# 待つ時間（20秒）は、評価の間隔（10秒）の倍数で、次のヘルスチェック（15秒後）の結果が出た後になる長さ。
 # 「失敗している状態が1分続いたら」にしないのは、気づくまでに1分以上かかるから。
 # 値がないときをアラートにしないのは、監視を ON にした直後はまだ1回も叩いておらず、すぐ誤って発生するから
-def probe_failures(target):
-    series = f'probe_success{{job="api",instance="{target}"}}'
-    return f"count_over_time({series}[30s]) - sum_over_time({series}[30s])"
+PROBE_FOR = "20s"
+
+
+def probe_success(target):
+    return f'probe_success{{job="api",instance="{target}"}}'
 
 
 MONITORS += [
-    monitor("app-up", "app", "死活（/up）", probe_failures("http://app:3000/up"),
-            "gt", 1, "0s", "critical", "API の /up が2回続けて応答しませんでした", probe="http://app:3000/up"),
+    monitor("app-up", "app", "死活（/up）", probe_success("http://app:3000/up"),
+            "lt", 1, PROBE_FOR, "critical", "API の /up が2回続けて応答しませんでした", probe="http://app:3000/up"),
     monitor("app-latency", "app", "応答時間（/up）", 'probe_duration_seconds{job="api",instance="http://app:3000/up"}',
             "gt", 1, "5m", "warning", "API の /up の応答に1秒以上かかっています", probe="http://app:3000/up"),
     # わざと存在しないパスを叩く、アラートの出方を確かめるための監視。普段は OFF にしておく
-    monitor("app-up-broken", "app", "死活（/up_broken・確認用）", probe_failures("http://app:3000/up_broken"),
-            "gt", 1, "0s", "critical", "確認用の監視です。存在しないパス /up_broken を叩いているので、ON にすると必ず発生します",
+    monitor("app-up-broken", "app", "死活（/up_broken・確認用）", probe_success("http://app:3000/up_broken"),
+            "lt", 1, PROBE_FOR, "critical", "確認用の監視です。存在しないパス /up_broken を叩いているので、ON にすると必ず発生します",
             paused=True, probe="http://app:3000/up_broken"),
 ]
 
