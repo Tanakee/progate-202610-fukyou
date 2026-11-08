@@ -1,5 +1,7 @@
 class ApplicationController < ActionController::API
   include ActionController::HttpAuthentication::Token::ControllerMethods
+  # テストで使う Disk のサービスは、URL を作るのにリクエストのホスト名が要る
+  include ActiveStorage::SetCurrent
 
   before_action :authenticate
 

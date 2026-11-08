@@ -63,6 +63,19 @@ docker compose exec app ruby bin/rails db:drop db:create db:migrate
 空の DB に `db:migrate` を実行すると、Rails は先に `backend/db/schema.rb` を読み込みます。
 マイグレーションを書き換えたときは、`schema.rb` を消してから作り直してください。
 
+## 音声の保存先（MinIO）
+
+曲の音声は Active Storage で S3 互換の MinIO に保存します。`docker compose up` で一緒に起動し、初回は MinIO をソースからビルドするので数分かかります（コミュニティ版の公式イメージは配布が止まっています）。
+
+- アプリには、MinIO を直接指す署名付き URL（1日有効）を返します。Rails を通さず、Range リクエストで先頭から少しずつ読んで再生を始められます
+- 署名付き URL のホスト名は `minio.localhost:9000` です。Mac（シミュレーター）では `*.localhost` が自分自身を指し、compose の中では MinIO の別名になっているので、どちらからも同じ URL で届きます。実機からは届きません
+- アップロードされた音声は、ffmpeg で 128kbps の固定ビットレートの mp3 にし、ジャケット画像を除いて保存します
+- 保存したファイルは `http://localhost:9001`（ユーザー名・パスワードとも `minioadmin`）で見られます
+
+```sh
+curl -I -H "Range: bytes=0-1023" "<mp3_url>"   # 206 Partial Content が返れば Range で読める
+```
+
 ## API 仕様（Swagger UI）
 
 API 仕様は `backend/openapi/swagger.yml` にあります。リポジトリ直下で次を実行し、`http://localhost:8080` を開くと Swagger UI で読めます。

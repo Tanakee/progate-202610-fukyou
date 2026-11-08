@@ -1,0 +1,2 @@
+alice_song_audio: <%= ActiveStorage::FixtureSet.blob filename: "song.mp3", service_name: "test" %>
+bob_song_audio: <%= ActiveStorage::FixtureSet.blob filename: "song.mp3", service_name: "test" %>

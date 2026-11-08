@@ -38,6 +38,9 @@ gem "image_processing", "~> 1.2"
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 # gem "rack-cors"
 
+# Active Storage で S3（開発では S3 互換の MinIO）に音声を保存する
+gem "aws-sdk-s3", require: false
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -50,10 +53,4 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
-
-  # Active StorageでMinIO・LocalStackなどのS3互換ストレージにファイルを保存する
-  gem "aws-sdk-s3", require: false
-
-  # Active StorageでS3互換ストレージにファイルを保存する
-  gem "aws-sdk-s3", require: false
 end
