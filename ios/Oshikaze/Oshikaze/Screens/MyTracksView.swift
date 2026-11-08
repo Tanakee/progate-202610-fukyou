@@ -9,6 +9,7 @@ struct MyTracksView: View {
     @State private var youtubeURL = ""
     @State private var isImporting = false
     @State private var errorMessage: String?
+    @State private var demoMessage: String?
 
     var body: some View {
         List {
@@ -54,6 +55,22 @@ struct MyTracksView: View {
             }
 
             Section {
+                Button("今日の回収をリセットする") {
+                    Task { await resetFavoriteLimit() }
+                }
+                Button("風船を日本各地に配置する") {
+                    Task { await repositionBalloons() }
+                }
+                if let demoMessage {
+                    Text(demoMessage).foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("デモ用")
+            } footer: {
+                Text("開発環境のサーバーでだけ使えます")
+            }
+
+            Section {
                 if let email = auth.user?.email {
                     LabeledContent("ログイン中", value: email)
                 }
@@ -79,6 +96,26 @@ struct MyTracksView: View {
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func resetFavoriteLimit() async {
+        do {
+            let result: [String: Int] = try await auth.client.send(.post, "test_reset_favorite_limit")
+            demoMessage = result["reset_count"] == 0 ? "今日はまだ回収していません" : "今日の回収をリセットしました。もう1曲回収できます"
+        } catch {
+            auth.handle(error)
+            demoMessage = error.localizedDescription
+        }
+    }
+
+    private func repositionBalloons() async {
+        do {
+            let result: [String: Int] = try await auth.client.send(.post, "test_reposition_balloons")
+            demoMessage = "\(result["updated_count"] ?? 0)個の風船を日本各地に配置しました"
+        } catch {
+            auth.handle(error)
+            demoMessage = error.localizedDescription
         }
     }
 
