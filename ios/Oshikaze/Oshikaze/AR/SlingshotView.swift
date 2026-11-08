@@ -49,6 +49,9 @@ struct SlingshotView: View {
                     .overlay(alignment: .topTrailing) { closeButton.padding() }
             }
         }
+        // パチンコを引く操作を、下の端のiOSの操作（簡易アクセスやホームへ戻る）より先に受け付ける
+        .defersSystemGestures(on: .bottom)
+        .persistentSystemOverlays(.hidden)
         .task { await run() }
         .onDisappear { scene?.stop() }
     }
@@ -112,7 +115,8 @@ struct SlingshotView: View {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
         }
-        .padding(.bottom, 16)
+        // 画面の下の端から離して、簡易アクセス（下の端を下になぞると画面全体が降りる）と重ならないようにする
+        .padding(.bottom, 56)
     }
 
     // MARK: - 風船の入れ替えと当たり
