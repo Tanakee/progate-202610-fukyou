@@ -6,7 +6,6 @@ struct MainView: View {
     @Environment(ListeningSession.self) private var session
     @Environment(AuthStore.self) private var auth
     @Environment(MyBalloonStore.self) private var myBalloon
-    @Environment(PopStore.self) private var pops
     @Environment(ArtworkColors.self) private var artworkColors
     @State private var position = MapCameraPosition.userLocation(
         fallback: .camera(MapCamera(centerCoordinate: .init(latitude: 36.5, longitude: 137.5), distance: 3_000_000))
@@ -33,7 +32,7 @@ struct MainView: View {
                 }
                 .annotationTitles(.hidden)
             }
-            ForEach(session.visibleBalloons) { balloon in
+            ForEach(session.feed.balloons) { balloon in
                 Annotation("", coordinate: balloon.coordinate, anchor: .bottom) {
                     BalloonMark(id: balloon.id,
                                 isPlaying: balloon.id == session.currentBalloonID && isListening,
@@ -63,7 +62,7 @@ struct MainView: View {
                         PillLabel(title: "空を見上げる", systemImage: "binoculars.fill")
                     }
                     .buttonStyle(.bouncy)
-                    .accessibilityHint("カメラで空を見て、パチンコで風船を割れます。スマホを振っても開きます")
+                    .accessibilityHint("カメラで空を見て、気に入った曲の風船を割るとお気に入りにできます。スマホを振っても開きます")
                     LaunchButton(balloon: myBalloon.balloon) {
                         if let balloon = myBalloon.balloon {
                             showMyBalloon(balloon)
@@ -94,7 +93,7 @@ struct MainView: View {
             SlingshotView()
         }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
-            // 設計書の「スマホを振ると割る」を、空を見上げてパチンコで割る画面を開く操作にする
+            // スマホを振っても、空を見上げて気に入った曲を選ぶ画面を開く
             guard !showsLaunch, !showsAccount else { return }
             showsSky = true
         }
@@ -102,8 +101,6 @@ struct MainView: View {
             // ログインとログアウトのたびに読み直し、その後は30秒ごとに回数を更新する。
             // 先に空にするのは、別の人でログインし直したときに、前の人の風船が消えたと通知しないため
             myBalloon.clear()
-            pops.clear()
-            await pops.refresh(with: auth)
             while !Task.isCancelled {
                 await myBalloon.refresh(with: auth)
                 try? await Task.sleep(for: Self.myBalloonRefreshInterval)

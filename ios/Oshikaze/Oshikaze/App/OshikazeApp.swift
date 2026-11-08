@@ -7,7 +7,6 @@ struct OshikazeApp: App {
     @State private var auth: AuthStore
     @State private var tracks: TrackStore
     @State private var myBalloon: MyBalloonStore
-    @State private var pops: PopStore
     @State private var session: ListeningSession
     @State private var artworkColors = ArtworkColors()
     /// 説明を見終えるまで、位置情報の許可を尋ねない
@@ -20,14 +19,12 @@ struct OshikazeApp: App {
         let auth = AuthStore()
         let tracks = TrackStore()
         let myBalloon = MyBalloonStore()
-        let pops = PopStore()
         _auth = State(initialValue: auth)
         _tracks = State(initialValue: tracks)
         _myBalloon = State(initialValue: myBalloon)
-        _pops = State(initialValue: pops)
         _session = State(initialValue: ListeningSession(feed: BalloonFeed(), location: LocationProvider(),
                                                         playback: PlaybackController(), tracks: tracks,
-                                                        auth: auth, myBalloon: myBalloon, pops: pops))
+                                                        auth: auth, myBalloon: myBalloon))
     }
 
     var body: some Scene {
@@ -45,7 +42,6 @@ struct OshikazeApp: App {
             .environment(auth)
             .environment(tracks)
             .environment(myBalloon)
-            .environment(pops)
             .environment(artworkColors)
             .font(Theme.font(16))
             .tint(Theme.sky)

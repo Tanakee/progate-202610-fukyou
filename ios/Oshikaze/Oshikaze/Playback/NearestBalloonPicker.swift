@@ -7,7 +7,7 @@ enum NearestBalloonPicker {
 
     /// - Parameters:
     ///   - current: 今流している風船のID。消えていれば一番近い風船にすぐ乗り換える
-    ///   - excluded: 自分の風船と割った風船のID
+    ///   - excluded: 自分の風船のID
     static func pick(from balloons: [Balloon],
                      at location: CLLocationCoordinate2D,
                      current: Int?,

@@ -17,7 +17,6 @@ Rails.application.routes.draw do
 
     namespace :me do
       resources :balloons, only: :index
-      resources :pops, only: :index, path: "popped"
       resources :favorites, only: :index
       resources :journeys, only: :index
     end
@@ -30,7 +29,6 @@ Rails.application.routes.draw do
       scope module: :balloons do
         resources :plays, only: :create
         resource :collection, only: :create, path: "collect"
-        resource :pop, only: :create
       end
     end
   end
