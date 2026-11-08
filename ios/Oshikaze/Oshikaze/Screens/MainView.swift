@@ -63,7 +63,7 @@ struct MainView: View {
                         PillLabel(title: "空を見上げる", systemImage: "binoculars.fill")
                     }
                     .buttonStyle(.bouncy)
-                    .accessibilityHint("カメラで空を見て、パチンコで風船を割れます。スマホを振っても開きます")
+                    .accessibilityHint("カメラで空を見て、気に入った曲の風船を割るとお気に入りにできます。スマホを振っても開きます")
                     LaunchButton(balloon: myBalloon.balloon) {
                         if let balloon = myBalloon.balloon {
                             showMyBalloon(balloon)
@@ -94,7 +94,7 @@ struct MainView: View {
             SlingshotView()
         }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
-            // 設計書の「スマホを振ると割る」を、空を見上げてパチンコで割る画面を開く操作にする
+            // スマホを振っても、空を見上げて気に入った曲を選ぶ画面を開く
             guard !showsLaunch, !showsAccount else { return }
             showsSky = true
         }
