@@ -2,11 +2,10 @@ import AVFoundation
 import RealityKit
 import SwiftUI
 
-/// 空を見上げて、浮かぶ風船をパチンコで割る画面
+/// 空を見上げて、気に入った曲の風船をパチンコで割り、お気に入りにする画面
 struct SlingshotView: View {
     @Environment(ListeningSession.self) private var session
     @Environment(MyBalloonStore.self) private var myBalloon
-    @Environment(PopStore.self) private var pops
     @Environment(AuthStore.self) private var auth
     @Environment(TrackStore.self) private var tracks
     @Environment(\.dismiss) private var dismiss
@@ -17,6 +16,9 @@ struct SlingshotView: View {
     @State private var aimedTitle: String?
     @State private var message: String?
     @State private var sounds = Sounds()
+    /// 命中してからAPIの結果が返るまで、2秒ごとの更新で同じ風船を作り直さない
+    @State private var hiddenTargetIDs: Set<Int> = []
+    @State private var todaysFavorite: Favorite?
 
     /// 一度に浮かべる風船の数。多すぎると空が埋まって狙いにくい
     private static let targetCount = 8
@@ -53,6 +55,7 @@ struct SlingshotView: View {
         .defersSystemGestures(on: .bottom)
         .persistentSystemOverlays(.hidden)
         .task { await run() }
+        .task { await loadTodaysFavorite() }
         .onDisappear { scene?.stop() }
     }
 
@@ -67,9 +70,13 @@ struct SlingshotView: View {
                         .font(Theme.font(13, relativeTo: .subheadline))
                         .foregroundStyle(Theme.ink.opacity(0.6))
                 } else {
-                    Text("空を見上げて、風船を探そう")
+                    Text("気に入った曲の風船を狙おう")
                         .font(Theme.font(16, .bold, relativeTo: .headline))
                 }
+                Text(todaysFavorite.map { "今日はもう「\($0.track.title)」をお気に入りにしています" }
+                     ?? "割ると今日のお気に入りになります（1日1回）")
+                    .font(Theme.font(13, .bold, relativeTo: .subheadline))
+                    .foregroundStyle(Theme.heart)
                 Text(aimedTitle.map { "狙っている風船：\($0)" } ?? "風船は、実際にある方角に浮かんでいます")
                     .font(Theme.font(13, relativeTo: .subheadline))
                     .foregroundStyle(Theme.ink.opacity(0.6))
@@ -139,8 +146,8 @@ struct SlingshotView: View {
         guard let here = session.location.coordinate else { return }
         let ownID = myBalloon.balloon?.id
         let playingID = listeningTrack == nil ? nil : session.currentBalloonID
-        var balloons = session.visibleBalloons
-            .filter { $0.id != ownID }
+        var balloons = session.feed.balloons
+            .filter { $0.id != ownID && !hiddenTargetIDs.contains($0.id) }
             .sorted { Geo.distance(here, $0.coordinate) < Geo.distance(here, $1.coordinate) }
         // 今聴いている風船は、近い8個に入っていなくても必ず浮かべる
         var nearest = Array(balloons.prefix(Self.targetCount))
@@ -154,13 +161,36 @@ struct SlingshotView: View {
     }
 
     private func hit(_ id: Int) async {
+        guard hiddenTargetIDs.insert(id).inserted else { return }
         sounds.play(.pop)
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         let title = await trackTitle(of: id)
-        withAnimation(.spring) { message = title.map { "「\($0)」の風船を割りました" } ?? "風船を割りました" }
-        await pops.pop(id, with: auth)
+        do {
+            todaysFavorite = try await session.collect(balloonID: id)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            withAnimation(.spring) {
+                message = title.map { "「\($0)」をお気に入りにしました！" } ?? "お気に入りにしました！"
+            }
+        } catch {
+            // 1日1回の制限や未ログインなら、風船を空へ戻してもう一度見られるようにする
+            hiddenTargetIDs.remove(id)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            withAnimation(.spring) { message = error.localizedDescription }
+        }
         try? await Task.sleep(for: .seconds(2))
         withAnimation { message = nil }
+    }
+
+    private func loadTodaysFavorite() async {
+        guard auth.isSignedIn else { return }
+        do {
+            let favorites: [Favorite] = try await auth.client.send(.get, "me/favorites")
+            // 端末のタイムゾーンで今日を決めないのは、1日1回の区切りがサーバーの日本時間の0時だから
+            let today = Date.now.formatted(Date.ISO8601FormatStyle(timeZone: TimeZone(identifier: "Asia/Tokyo")!).year().month().day())
+            todaysFavorite = favorites.first { $0.collectedOn == today }
+        } catch {
+            auth.handle(error)
+        }
     }
 
     private func aim(at id: Int?) async {

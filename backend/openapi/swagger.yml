@@ -55,9 +55,9 @@ tags:
   - name: 曲
     description: mp3のアップロードと曲情報
   - name: 風船
-    description: 風船を飛ばす、聴く、回収する、割る
+    description: 風船を飛ばす、聴く、回収する
   - name: マイページ
-    description: 割った風船、お気に入り、旅の記録
+    description: お気に入り、旅の記録
 
 security:
   - bearerAuth: []
@@ -493,53 +493,7 @@ paths:
                 code: daily_limit_reached
                 message: 回収は1日1回までです
 
-  /balloons/{id}/pop:
-    post:
-      tags: [風船]
-      operationId: popBalloon
-      summary: 割る（自分の世界からのみ消す）
-      description: |
-        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
-
-        自分の地図からだけ風船を消します。他の人には引き続き見えます。再送しても `200` を返します。
-      parameters:
-        - $ref: '#/components/parameters/BalloonId'
-      responses:
-        '200':
-          description: 割るのに成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PopResult'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   # ---------- マイページ ----------
-
-  /me/popped:
-    get:
-      tags: [マイページ]
-      operationId: listMyPopped
-      summary: 割った風船のID一覧を返す
-      description: |
-        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
-
-        アプリはこの一覧に入っている風船を地図に表示しません。
-      responses:
-        '200':
-          description: 取得に成功
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: integer
-                  format: int64
-                  example: 42
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   /me/favorites:
     get:
@@ -880,13 +834,3 @@ components:
           minimum: 0
           description: 加算後（加算しなかった場合は現在）の再生回数
           example: 13
-
-    PopResult:
-      type: object
-      required: [balloon_id]
-      properties:
-        balloon_id:
-          type: integer
-          format: int64
-          example: 42
-          description: 割った風船のID
