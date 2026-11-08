@@ -35,10 +35,11 @@ struct SlingshotView: View {
                     Spacer()
                     if let message {
                         Text(message)
-                            .font(.headline)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(.regularMaterial, in: Capsule())
+                            .font(Theme.font(16, .bold, relativeTo: .headline))
+                            .foregroundStyle(Theme.ink)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 11)
+                            .softCard(tint: Theme.heart, cornerRadius: 22)
                             .transition(.scale.combined(with: .opacity))
                     }
                     slingshot
@@ -58,21 +59,22 @@ struct SlingshotView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if let playing = listeningTrack {
                     Label("今聴いている：\(playing.title)", systemImage: "music.note")
-                        .font(.headline)
+                        .font(Theme.font(16, .bold, relativeTo: .headline))
                         .lineLimit(1)
                     Text("♪ の付いた、光っている風船です")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.font(13, relativeTo: .subheadline))
+                        .foregroundStyle(Theme.ink.opacity(0.6))
                 } else {
                     Text("空を見上げて、風船を探そう")
-                        .font(.headline)
+                        .font(Theme.font(16, .bold, relativeTo: .headline))
                 }
                 Text(aimedTitle.map { "狙っている風船：\($0)" } ?? "風船は、実際にある方角に浮かんでいます")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.font(13, relativeTo: .subheadline))
+                    .foregroundStyle(Theme.ink.opacity(0.6))
             }
-            .padding(12)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .foregroundStyle(Theme.ink)
+            .padding(14)
+            .softCard(cornerRadius: 22)
             Spacer()
             closeButton
         }
@@ -88,10 +90,9 @@ struct SlingshotView: View {
         Button {
             dismiss()
         } label: {
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 34))
-                .symbolRenderingMode(.hierarchical)
+            RoundIcon(systemName: "xmark", size: 44, color: Theme.ink)
         }
+        .buttonStyle(.bouncy)
         .accessibilityLabel("閉じる")
     }
 

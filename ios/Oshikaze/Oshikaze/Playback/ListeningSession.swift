@@ -108,10 +108,9 @@ final class ListeningSession {
         playback.play(track)
     }
 
-    /// 流している風船を今日の1曲として回収する。回収した風船はみんなの空から消えるので、すぐ次の風船へ乗り換える
-    @discardableResult
-    func collectCurrent() async throws -> Favorite? {
-        guard let balloonID = currentBalloonID else { return nil }
+    /// 風船を今日の1曲として回収する。回収した風船はみんなの空から消えるので、すぐ次の風船へ乗り換える。
+    /// 確認を出している間に流す風船が切り替わることがあるので、確認を出したときの風船を受け取る
+    func collect(balloonID: Int) async throws -> Favorite {
         do {
             let favorite: Favorite = try await auth.client.send(.post, "balloons/\(balloonID)/collect")
             feed.remove(balloonID)

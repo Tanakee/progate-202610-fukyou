@@ -15,7 +15,8 @@ final class BalloonFeed {
     }
 
     private(set) var balloons: [Balloon] = []
-    private(set) var state = State.disconnected
+    /// 起動直後は、まだ一度もつないでいないので「接続中」として表示する
+    private(set) var state = State.connecting
 
     private struct Anchor {
         let id: Int

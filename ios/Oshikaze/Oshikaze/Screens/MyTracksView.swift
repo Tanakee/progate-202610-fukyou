@@ -68,6 +68,7 @@ struct MyTracksView: View {
             }
         }
         .navigationTitle("自分の曲")
+        .skyBackground()
         .refreshable { await load() }
         .task { await load() }
     }
