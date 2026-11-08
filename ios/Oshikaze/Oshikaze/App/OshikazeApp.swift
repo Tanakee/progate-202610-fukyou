@@ -10,6 +10,8 @@ struct OshikazeApp: App {
     @State private var pops: PopStore
     @State private var session: ListeningSession
     @State private var artworkColors = ArtworkColors()
+    /// 説明を見終えるまで、位置情報の許可を尋ねない
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     private let notificationDelegate = NotificationDelegate()
 
     init() {
@@ -30,23 +32,39 @@ struct OshikazeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainView()
-                .environment(session)
-                .environment(auth)
-                .environment(tracks)
-                .environment(myBalloon)
-                .environment(pops)
-                .environment(artworkColors)
-                .font(Theme.font(16))
-                .tint(Theme.sky)
-                .task { await auth.refresh() }
+            Group {
+                if hasCompletedOnboarding {
+                    MainView()
+                } else {
+                    OnboardingView {
+                        hasCompletedOnboarding = true
+                    }
+                }
+            }
+            .environment(session)
+            .environment(auth)
+            .environment(tracks)
+            .environment(myBalloon)
+            .environment(pops)
+            .environment(artworkColors)
+            .font(Theme.font(16))
+            .tint(Theme.sky)
+            .task { await auth.refresh() }
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             // 起動と復帰のときに読み直す。切れていればつなぎ直す
-            guard phase == .active else { return }
-            session.feed.start()
-            session.location.start()
-            session.start()
+            startServicesIfReady(phase: phase)
         }
+        .onChange(of: hasCompletedOnboarding) { _, completed in
+            guard completed else { return }
+            startServicesIfReady(phase: scenePhase)
+        }
+    }
+
+    private func startServicesIfReady(phase: ScenePhase) {
+        guard hasCompletedOnboarding, phase == .active else { return }
+        session.feed.start()
+        session.location.start()
+        session.start()
     }
 }
