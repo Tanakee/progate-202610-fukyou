@@ -5,7 +5,7 @@ struct Track: Decodable, Equatable, Identifiable {
     let id: Int
     let title: String
     let artist: String
-    /// BEに保存されたmp3。ここから直接流す
+    /// ストレージのmp3を直接指す署名付きURL。ここから直接流す。BEが返してから1日で使えなくなる
     let mp3URL: URL
 
     enum CodingKeys: String, CodingKey {

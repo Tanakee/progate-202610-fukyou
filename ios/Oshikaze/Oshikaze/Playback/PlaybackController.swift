@@ -20,6 +20,8 @@ final class PlaybackController {
     }
 
     private var channel: Channel?
+    /// 次に流しそうな曲。先に読み始めておき、乗り換えたときにそのまま使う
+    private var preloaded: AVURLAsset?
     /// 流したい曲。流すがOFFの間も覚えておき、ONにしたら鳴らす
     private var desired: Track?
     private var hasDesired = false
@@ -68,9 +70,20 @@ final class PlaybackController {
         switchTo(track)
     }
 
+    /// 次に流しそうな曲の先頭を読んでおく。乗り換えたとき、つなぐところから始めずに済む
+    func preload(_ track: Track) {
+        guard preloaded?.url != track.mp3URL, channel?.track != track else { return }
+        let asset = AVURLAsset(url: track.mp3URL)
+        preloaded = asset
+        Task { _ = try? await asset.load(.isPlayable, .duration) }
+    }
+
     private func switchTo(_ track: Track?) {
         guard let item = makeItem(track) else { return }
         let player = AVQueuePlayer()
+        // 既定の true にしないのは、途切れないだけ溜まるまで待つので、鳴り始めが遅れるから。
+        // mp3 は先頭の数十KBで鳴らせるので、届いた分からすぐ鳴らす
+        player.automaticallyWaitsToMinimizeStalling = false
         player.volume = 0
         let next = Channel(player: player, looper: AVPlayerLooper(player: player, templateItem: item), track: track)
         let previous = channel
@@ -85,7 +98,12 @@ final class PlaybackController {
     }
 
     private func makeItem(_ track: Track?) -> AVPlayerItem? {
-        AVPlayerItem(url: track?.mp3URL ?? Self.silenceURL)
+        guard let track else { return AVPlayerItem(url: Self.silenceURL) }
+        if let preloaded, preloaded.url == track.mp3URL {
+            self.preloaded = nil
+            return AVPlayerItem(asset: preloaded)
+        }
+        return AVPlayerItem(url: track.mp3URL)
     }
 
     private func fade(_ player: AVPlayer, to target: Float, completion: (() -> Void)? = nil) {
