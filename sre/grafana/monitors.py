@@ -1,18 +1,22 @@
-"""監視（Grafana のアラートルール）の一覧と、Grafana への登録。
+"""監視（Grafana のアラートルール）の一覧と、Grafana への登録、ヘルスチェック先の書き出し。
 
-docker compose up のたびに grafana-setup コンテナが実行し、この一覧どおりにルールを作り直す。
+monitor-sync コンテナが起動時にこの一覧どおりにルールを作り直し、そのあとは動き続けて、
+ON の監視が使うヘルスチェック先だけを Prometheus の読むファイルに書き出す（OFF の監視の先は叩かない）。
 管理画面で一時停止（OFF）したルールは、OFF のまま残す。
 
 ファイルから読み込ませる（provisioning）のではなく API で登録するのは、ファイルから読み込んだルールは
 管理画面で一時停止できず、監視の ON/OFF を画面から切り替えられないから。
 """
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
 GRAFANA = "http://grafana:3000"
+PROBE_TARGETS = "/prometheus-targets/api.json"
+SYNC_SECONDS = 15
 FOLDER = {"uid": "oshikaze-monitors", "title": "推し風 監視"}
 
 SERVICES = {
@@ -26,11 +30,11 @@ SERVICES = {
 BATCHES = {"balloons": "balloons:move", "wind": "wind:fetch"}
 
 
-def monitor(uid, service, aspect, expr, op, threshold, for_, severity, summary, no_data="OK", paused=False):
+def monitor(uid, service, aspect, expr, op, threshold, for_, severity, summary, no_data="OK", paused=False, probe=None):
     return {
         "uid": uid, "group": SERVICES[service], "title": f"【{SERVICES[service]}】{aspect}",
         "expr": expr, "op": op, "threshold": threshold, "for": for_, "no_data": no_data,
-        "severity": severity, "summary": summary, "paused": paused,
+        "severity": severity, "summary": summary, "paused": paused, "probe": probe,
     }
 
 
@@ -67,13 +71,13 @@ MONITORS.append(
 
 MONITORS += [
     monitor("app-up", "app", "死活（/up）", 'probe_success{job="api",instance="http://app:3000/up"}',
-            "lt", 1, "1m", "critical", "API の /up に応答がありません", no_data="Alerting"),
+            "lt", 1, "1m", "critical", "API の /up に応答がありません", no_data="Alerting", probe="http://app:3000/up"),
     monitor("app-latency", "app", "応答時間（/up）", 'probe_duration_seconds{job="api",instance="http://app:3000/up"}',
-            "gt", 1, "5m", "warning", "API の /up の応答に1秒以上かかっています"),
+            "gt", 1, "5m", "warning", "API の /up の応答に1秒以上かかっています", probe="http://app:3000/up"),
     # わざと存在しないパスを叩く、アラートの出方を確かめるための監視。普段は OFF にしておく
     monitor("app-up-broken", "app", "死活（/up_broken・確認用）", 'probe_success{job="api",instance="http://app:3000/up_broken"}',
             "lt", 1, "1m", "critical", "確認用の監視です。存在しないパス /up_broken を叩いているので、ON にすると必ず発生します",
-            no_data="Alerting", paused=True),
+            no_data="Alerting", paused=True, probe="http://app:3000/up_broken"),
 ]
 
 
@@ -107,14 +111,29 @@ def rule(m, paused):
     }
 
 
-def main():
+def write_probe_targets():
+    paused = {r["uid"]: r["isPaused"] for r in request("GET", "/api/v1/provisioning/alert-rules")}
+    # 同じ先を2つの監視（/up の死活と応答時間）が使うので、どちらかが ON なら叩く
+    targets = sorted({m["probe"] for m in MONITORS if m["probe"] and not paused.get(m["uid"], m["paused"])})
+    # 書きかけを Prometheus に読まれないよう、別名で書いてから置き換える
+    with open(PROBE_TARGETS + ".tmp", "w") as file:
+        json.dump([{"targets": targets, "labels": {}}], file)
+    os.replace(PROBE_TARGETS + ".tmp", PROBE_TARGETS)
+    return targets
+
+
+def wait_for_grafana():
     while True:
         try:
             if request("GET", "/api/health"):
-                break
+                return
         except (urllib.error.URLError, RuntimeError):
             pass
         time.sleep(2)
+
+
+def main():
+    wait_for_grafana()
 
     if not request("GET", f"/api/folders/{FOLDER['uid']}"):
         request("POST", "/api/folders", FOLDER)
@@ -133,6 +152,18 @@ def main():
         current = request("GET", path)
         current["interval"] = 10
         request("PUT", path, current)
+
+    written = None
+    while True:
+        try:
+            targets = write_probe_targets()
+            if targets != written:
+                print("ヘルスチェック先: " + ", ".join(targets or ["なし"]), flush=True)
+                written = targets
+        except (urllib.error.URLError, RuntimeError) as error:
+            # Grafana が再起動している間は、前に書いたヘルスチェック先のまま待つ
+            print(f"ヘルスチェック先を更新できませんでした: {error}", flush=True)
+        time.sleep(SYNC_SECONDS)
 
 
 if __name__ == "__main__":

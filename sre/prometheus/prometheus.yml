@@ -30,9 +30,9 @@ scrape_configs:
     metrics_path: /probe
     params:
       module: [http_2xx]
-    static_configs:
-      # /up_broken は、アラートの出方を確かめるための存在しないパス。監視は Grafana で普段 OFF にしてある
-      - targets: ["http://app:3000/up", "http://app:3000/up_broken"]
+    # 叩く先は monitor-sync が、Grafana で ON になっている監視の分だけ書き出す。OFF の監視の先は叩かない
+    file_sd_configs:
+      - files: ["/prometheus-targets/api.json"]
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

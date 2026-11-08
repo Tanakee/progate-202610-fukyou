@@ -12,6 +12,7 @@ services:
     volumes:
       - ./prometheus:/etc/prometheus:ro
       - prometheus_data:/prometheus
+      - probe_targets:/prometheus-targets:ro
     deploy:
       resources:
         limits: { cpus: "0.5", memory: 512M }
@@ -106,16 +107,17 @@ services:
       resources:
         limits: { cpus: "0.5", memory: 256M }
 
-  # 監視（アラートルール）を Grafana に登録して終わる。一覧は grafana/monitors.py
-  grafana-setup:
-    cgroup_parent: /fukyou/grafana-setup
+  # 監視（アラートルール）を Grafana に登録し、ON の監視のヘルスチェック先だけを Prometheus に渡し続ける。一覧は grafana/monitors.py
+  monitor-sync:
+    cgroup_parent: /fukyou/monitor-sync
     image: python:3.13-alpine
-    command: ["python", "-I", "/sre/monitors.py"]
+    command: ["python", "-I", "-u", "/sre/monitors.py"]
     volumes:
       - ./grafana/monitors.py:/sre/monitors.py:ro
+      - probe_targets:/prometheus-targets
     depends_on:
       - grafana
-    restart: on-failure
+    restart: unless-stopped
     deploy:
       resources:
         limits: { cpus: "0.25", memory: 64M }
@@ -124,3 +126,5 @@ volumes:
   prometheus_data:
   loki_data:
   grafana_data:
+  # ヘルスチェック先のファイル。monitor-sync が書き、Prometheus が読む
+  probe_targets:

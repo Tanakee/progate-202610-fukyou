@@ -184,8 +184,8 @@
     {
       "id": "setup",
       "type": "backend",
-      "label": "grafana-setup",
-      "sublabel": "monitors.py の監視を API で登録",
+      "label": "monitor-sync",
+      "sublabel": "監視の登録と、ON の監視のチェック先の書き出し",
       "pos": [
         1050,
         820
@@ -318,7 +318,7 @@
       "id": "setup-grafana",
       "from": "setup",
       "to": "grafana",
-      "label": "監視を登録（ON/OFF は残す）",
+      "label": "監視を登録・ON/OFF を読む",
       "variant": "dashed"
     },
     {
@@ -327,6 +327,13 @@
       "to": "grafana",
       "label": "見る・ON/OFF",
       "variant": "emphasis"
+    },
+    {
+      "id": "setup-prometheus",
+      "from": "setup",
+      "to": "prometheus",
+      "label": "ON の監視のチェック先だけ",
+      "variant": "dashed"
     }
   ],
   "cards": [
@@ -354,7 +361,8 @@
       "items": [
         "監視は Grafana で判定し、管理画面の「アラートルール」で1件ずつ一時停止できる",
         "ファイルではなく API で登録するのは、ファイルから読んだルールは画面で止められないから",
-        "OFF にした監視は、作り直しても OFF のまま残る"
+        "OFF にした監視は、作り直しても OFF のまま残る",
+        "API の死活のように外から叩く監視は、OFF にすると叩くのもやめる（monitor-sync が15秒ごとにチェック先を書き直す）"
       ]
     },
     {

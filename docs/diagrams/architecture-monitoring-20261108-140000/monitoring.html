@@ -5303,12 +5303,16 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <path data-edge-from="grafana" data-edge-to="loki" data-edge-label="ログを検索" data-edge-key="10" data-edge-id="grafana-loki" data-composition-points="1050,624;914,624;914,820" data-composition-crossover="halo" data-composition-independent="true" d="M 1050 624 L 922 624 Q 914 624 914 632 L 914 820" class="a-default" data-animate="edge" style="--step:10" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:11">
-          <path data-graph-role="automatic-crossover-underlay" d="M 1165 820 L 1165 640" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
-          <path data-edge-from="setup" data-edge-to="grafana" data-edge-label="監視を登録（ON/OFF は残す）" data-edge-key="11" data-edge-id="setup-grafana" data-composition-points="1165,820;1165,640" data-composition-crossover="halo" data-composition-independent="true" d="M 1165 820 L 1165 640" class="a-dashed" data-animate="edge" style="--step:11" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+          <path data-graph-role="automatic-crossover-underlay" d="M 1172 820 L 1172 640" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="setup" data-edge-to="grafana" data-edge-label="監視を登録・ON/OFF を読む" data-edge-key="11" data-edge-id="setup-grafana" data-composition-points="1172,820;1172,640" data-composition-crossover="halo" data-composition-independent="true" d="M 1172 820 L 1172 640" class="a-dashed" data-animate="edge" style="--step:11" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
         <g data-graph-role="automatic-crossover" style="--step:12">
           <path data-graph-role="automatic-crossover-underlay" d="M 1360 598 L 1280 598" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
           <path data-edge-from="admin" data-edge-to="grafana" data-edge-label="見る・ON/OFF" data-edge-key="12" data-edge-id="admin-grafana" data-composition-points="1360,598;1280,598" data-composition-crossover="halo" data-composition-independent="true" d="M 1360 598 L 1280 598" class="a-emphasis" data-animate="edge" style="--step:12" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:13">
+          <path data-graph-role="automatic-crossover-underlay" d="M 1158 820 L 1158 784.5 Q 1158 776.5 1150 776.5 L 843 776.5 Q 835 776.5 835 768.5 L 835 460" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="setup" data-edge-to="prometheus" data-edge-label="ON の監視のチェック先だけ" data-edge-key="13" data-edge-id="setup-prometheus" data-composition-points="1158,820;1158,776.5;835,776.5;835,460" data-composition-crossover="halo" data-composition-independent="true" d="M 1158 820 L 1158 784.5 Q 1158 776.5 1150 776.5 L 843 776.5 Q 835 776.5 835 768.5 L 835 460" class="a-dashed" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
         </g>
 
         <!-- Components -->
@@ -5465,15 +5469,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="context" x="1165" y="614" class="t-muted" font-size="9" text-anchor="middle">ダッシュボード・監視26件の判定</text>
         </g>
 
-        <g id="node-setup" data-node-id="setup" data-node-label="grafana-setup" tabindex="0" role="button" aria-label="Focus grafana-setup, monitors.py の監視を API で登録, 保存と判定" aria-pressed="false" data-node-kind="backend" data-node-sublabel="monitors.py の監視を API で登録" data-node-context="保存と判定">
-          <title>grafana-setup · monitors.py の監視を API で登録 · 保存と判定</title>
+        <g id="node-setup" data-node-id="setup" data-node-label="monitor-sync" tabindex="0" role="button" aria-label="Focus monitor-sync, 監視の登録と、ON の監視のチェック先の書き出し, 保存と判定" aria-pressed="false" data-node-kind="backend" data-node-sublabel="監視の登録と、ON の監視のチェック先の書き出し" data-node-context="保存と判定">
+          <title>monitor-sync · 監視の登録と、ON の監視のチェック先の書き出し · 保存と判定</title>
           <rect x="1050" y="820" width="230" height="76" rx="8" class="c-mask"/>
           <rect x="1050" y="820" width="230" height="76" rx="8" class="c-backend" data-animate="node" style="--step:11" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1056 826) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1165" y="856" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">grafana-setup</text>
-        <text data-detail="context" x="1165" y="872" class="t-muted" font-size="9" text-anchor="middle">monitors.py の監視を API で登録</text>
+          <text data-node-label="" data-detail-anchor="" x="1165" y="856" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">monitor-sync</text>
+        <text data-detail="context" x="1165" y="872" class="t-muted" font-size="8.2" text-anchor="middle">監視の登録と、ON の監視のチェック先の書き出し</text>
         </g>
 
         <g id="node-admin" data-node-id="admin" data-node-label="管理画面を見る人" tabindex="0" role="button" aria-label="Focus 管理画面を見る人, http://localhost:3001, Architecture component" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="http://localhost:3001" data-node-context="Architecture component">
@@ -5535,13 +5539,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <rect x="885" y="702" width="58" height="14" rx="3" class="c-mask"/>
           <text x="914" y="712" class="t-edge-default" font-size="8" text-anchor="middle">ログを検索</text>
         </g>
-        <g data-detail="context" data-edge-from="setup" data-edge-to="grafana" data-edge-label="監視を登録（ON/OFF は残す）" data-edge-key="11" data-edge-id="setup-grafana">
-          <rect x="1095.2" y="800" width="139.6" height="14" rx="3" class="c-mask"/>
-          <text x="1165" y="810" class="t-edge-dashed" font-size="8" text-anchor="middle">監視を登録（ON/OFF は残す）</text>
+        <g data-detail="context" data-edge-from="setup" data-edge-to="grafana" data-edge-label="監視を登録・ON/OFF を読む" data-edge-key="11" data-edge-id="setup-grafana">
+          <rect x="1036" y="723" width="130" height="14" rx="3" class="c-mask"/>
+          <text x="1101" y="733" class="t-edge-dashed" font-size="8" text-anchor="middle">監視を登録・ON/OFF を読む</text>
         </g>
         <g data-detail="context" data-edge-from="admin" data-edge-to="grafana" data-edge-label="見る・ON/OFF" data-edge-key="12" data-edge-id="admin-grafana">
           <rect x="1286.2" y="578" width="67.6" height="14" rx="3" class="c-mask"/>
           <text x="1320" y="588" class="t-edge-emphasis" font-size="8" text-anchor="middle">見る・ON/OFF</text>
+        </g>
+        <g data-detail="context" data-edge-from="setup" data-edge-to="prometheus" data-edge-label="ON の監視のチェック先だけ" data-edge-key="13" data-edge-id="setup-prometheus">
+          <rect x="931.5" y="756.5" width="130" height="14" rx="3" class="c-mask"/>
+          <text x="996.5" y="766.5" class="t-edge-dashed" font-size="8" text-anchor="middle">ON の監視のチェック先だけ</text>
         </g>
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->
@@ -5790,6 +5798,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>監視は Grafana で判定し、管理画面の「アラートルール」で1件ずつ一時停止できる</li>
           <li>ファイルではなく API で登録するのは、ファイルから読んだルールは画面で止められないから</li>
           <li>OFF にした監視は、作り直しても OFF のまま残る</li>
+          <li>API の死活のように外から叩く監視は、OFF にすると叩くのもやめる（monitor-sync が15秒ごとにチェック先を書き直す）</li>
         </ul>
       </div>
 

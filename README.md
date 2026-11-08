@@ -88,14 +88,14 @@ curl -I -H "Range: bytes=0-1023" "<mp3_url>"   # 206 Partial Content が返れ�
 | `blackbox` | API の `/up` に応答があるか、応答時間 |
 | `loki`・`alloy` | 全コンテナの標準出力のログ（3日分） |
 | `grafana` | 管理画面。ダッシュボード「推し風 SRE」と、監視（アラートルール）の判定 |
-| `grafana-setup` | 監視の一覧（`sre/grafana/monitors.py`）を Grafana に登録して終わる |
+| `monitor-sync` | 監視の一覧（`sre/grafana/monitors.py`）を Grafana に登録し、ON の監視のヘルスチェック先だけを Prometheus に渡し続ける |
 
 - 各コンテナの CPU とメモリの上限は、`compose.yaml` と `sre/compose.yaml` の `deploy.resources.limits` に書いています
 - アラートは通知せず、管理画面で見ます
 
 ### 監視の一覧
 
-監視は「【対象】観点」の名前で、`sre/grafana/monitors.py` に書いています。管理画面の左のメニューの「アラート」→「アラートルール」で一覧を見られ、監視ごとに一時停止（OFF）できます。OFF にした監視は、`docker compose up` し直しても OFF のままです。
+監視は「【対象】観点」の名前で、`sre/grafana/monitors.py` に書いています。管理画面の左のメニューの「アラート」→「アラートルール」で一覧を見られ、監視ごとに一時停止（OFF）できます。OFF にした監視は、`docker compose up` し直しても OFF のままです。API の死活・応答時間のように外から叩く監視は、OFF にすると15秒ほどで叩くのもやめます（`/up` は死活と応答時間の両方が OFF のときだけ止まります）。
 
 | 対象 | 観点 | アラートになる条件 |
 | --- | --- | --- |
