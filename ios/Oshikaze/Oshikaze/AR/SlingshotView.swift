@@ -56,8 +56,17 @@ struct SlingshotView: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("空を見上げて、風船を探そう")
-                    .font(.headline)
+                if let playing = listeningTrack {
+                    Label("今聴いている：\(playing.title)", systemImage: "music.note")
+                        .font(.headline)
+                        .lineLimit(1)
+                    Text("♪ の付いた、光っている風船です")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("空を見上げて、風船を探そう")
+                        .font(.headline)
+                }
                 Text(aimedTitle.map { "狙っている風船：\($0)" } ?? "風船は、実際にある方角に浮かんでいます")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -68,6 +77,11 @@ struct SlingshotView: View {
             closeButton
         }
         .padding()
+    }
+
+    /// 実際に流している曲。止めている間は、どの風船も「今聴いている」にしない
+    private var listeningTrack: Track? {
+        session.playback.isListening ? session.currentTrack : nil
     }
 
     private var closeButton: some View {
@@ -160,12 +174,19 @@ struct SlingshotView: View {
     private func refreshTargets(in scene: SkyScene) {
         guard let here = session.location.coordinate else { return }
         let ownID = myBalloon.balloon?.id
-        let targets = session.visibleBalloons
+        let playingID = listeningTrack == nil ? nil : session.currentBalloonID
+        var balloons = session.visibleBalloons
             .filter { $0.id != ownID }
             .sorted { Geo.distance(here, $0.coordinate) < Geo.distance(here, $1.coordinate) }
-            .prefix(Self.targetCount)
-            .map { SkyTarget(id: $0.id, trackID: $0.trackID, coordinate: $0.coordinate) }
-        scene.show(Array(targets), from: here)
+        // 今聴いている風船は、近い8個に入っていなくても必ず浮かべる
+        var nearest = Array(balloons.prefix(Self.targetCount))
+        if let playingID, !nearest.contains(where: { $0.id == playingID }),
+           let playing = balloons.first(where: { $0.id == playingID }) {
+            nearest[nearest.count - 1] = playing
+        }
+        balloons = nearest
+        let targets = balloons.map { SkyTarget(id: $0.id, trackID: $0.trackID, coordinate: $0.coordinate) }
+        scene.show(targets, from: here, playingID: playingID)
     }
 
     private func hit(_ id: Int) async {
