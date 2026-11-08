@@ -545,6 +545,38 @@ paths:
                 code: daily_limit_reached
                 message: 回収は1日1回までです
 
+  /balloons/{id}/land:
+    post:
+      tags: [風船]
+      operationId: landBalloon
+      summary: 自分の風船を下ろす
+      description: |
+        **認証**: `Authorization: Bearer <token>` ヘッダーが必要
+
+        飛行中の自分の風船の旅を終えます。下ろすと次の風船を飛ばせます。
+      parameters:
+        - $ref: '#/components/parameters/BalloonId'
+      responses:
+        '200':
+          description: 下ろすのに成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balloon'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 飛行中ではない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: balloon_not_flying
+                message: この風船はもう飛んでいません
+
   # ---------- マイページ ----------
 
   /me/favorites:
@@ -756,11 +788,12 @@ components:
           example: 7
         status:
           type: string
-          enum: [flying, collected, lost]
+          enum: [flying, collected, lost, landed]
           description: |
             - `flying`: 飛行中
             - `collected`: 回収された
             - `lost`: 海や国外へ出た
+            - `landed`: 飛ばした人が下ろした
         origin_label:
           type: string
           description: 出発地点の地名

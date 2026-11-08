@@ -32,6 +32,12 @@ class Balloon < ApplicationRecord
     end
   end
 
+  def land!
+    raise NotFlying unless Balloon.flying.where(id:).update_all(status: "landed", ended_at: Time.current) == 1
+
+    reload
+  end
+
   def self.move_flying!(wind:, speed_scale:, now: Time.current)
     transaction do
       balloons = flying.order(:id).lock.to_a
