@@ -85,8 +85,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_130000) do
     t.date "collected_on", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "daily_limit_exempt", default: false, null: false
     t.index ["balloon_id"], name: "index_favorites_on_balloon_id", unique: true
-    t.index ["user_id", "collected_on"], name: "index_favorites_on_user_id_and_collected_on", unique: true
+    t.index ["user_id", "collected_on"], name: "index_favorites_on_user_id_and_collected_on", unique: true, where: "(daily_limit_exempt = false)"
   end
 
   create_table "journeys", force: :cascade do |t|

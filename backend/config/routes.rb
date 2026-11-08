@@ -5,6 +5,11 @@ Rails.application.routes.draw do
 
   # Accept ヘッダーのないリクエストでも html ではなく jbuilder のテンプレートを探させる
   defaults format: :json do
+    if Rails.env.development? || Rails.env.test?
+      post "test_reset_favorite_limit", to: "test_tools#reset_favorite_limit"
+      post "test_reposition_balloons", to: "test_tools#reposition_balloons"
+    end
+
     namespace :auth do
       resource :signup, only: :create
       post :login, to: "sessions#create"
