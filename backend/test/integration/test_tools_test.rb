@@ -65,8 +65,8 @@ class TestToolsTest < ActionDispatch::IntegrationTest
       assert_response :ok
       assert_equal 2, json["updated_count"]
 
-      Balloon.flying.order(:id).each_with_index do |item, index|
-        assert_equal TestBalloonPlacement::POINTS[index], [ item.lat, item.lng ]
+      Balloon.flying.order(:id).each do |item|
+        assert_includes TestBalloonPlacement::POINTS, [ item.lat, item.lng ]
         assert JapanEez.cover?(item.lat, item.lng)
         assert_equal Time.current, item.moved_at
         assert_equal [ 0.0, 0.0 ], [ item.speed_east, item.speed_north ]
@@ -78,9 +78,11 @@ class TestToolsTest < ActionDispatch::IntegrationTest
       message = JSON.parse(broadcasts("balloons").last)
       assert_equal "balloons.snapshot", message["event"]
       assert_equal Balloon.flying.count, message["balloons"].size
-      # 次の定期処理でも元の航路へ戻らない。
+      # 近くの港に乗船する場合もあるが、以前の航路へは瞬間移動しない。
+      position = [ balloon.reload.lat, balloon.lng ]
       Balloon.move_flying!(wind: {}, speed_scale: 1, now: Time.current + 5.seconds)
-      assert_nil balloon.reload.bound_for
+      assert_in_delta position[0], balloon.reload.lat, 0.2
+      assert_in_delta position[1], balloon.lng, 0.2
       assert_equal "flying", balloon.status
     end
 
@@ -96,6 +98,8 @@ class TestToolsTest < ActionDispatch::IntegrationTest
   end
 
   test "すべての配置候補は日本の対象地域内にある" do
+    assert_equal 47, TestBalloonPlacement::POINTS.length
+    assert_equal 47, TestBalloonPlacement::POINTS.uniq.length
     TestBalloonPlacement::POINTS.each do |lat, lng|
       assert JapanEez.cover?(lat, lng), "対象地域の外: #{lat}, #{lng}"
     end
