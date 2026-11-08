@@ -18,7 +18,17 @@ class BalloonsChannelTest < ActionCable::Channel::TestCase
     assert_equal Balloon.flying.ids.sort, sent.map { _1["id"] }.sort
     assert_not_includes sent.map { _1["id"] }, balloons(:lost).id
     flying = balloons(:flying)
-    assert_includes sent, { "id" => flying.id, "track_id" => flying.track_id, "lat" => 33.5, "lng" => 130.5, "ve" => 0.0, "vn" => 0.0 }
+    assert_includes sent, { "id" => flying.id, "track_id" => flying.track_id, "lat" => 33.5, "lng" => 130.5, "ve" => 0.0, "vn" => 0.0, "on_ship" => false }
+  end
+
+  test "港から船に乗っている風船は on_ship で知らせる" do
+    balloons(:bob_flying).update!(last_port: 0, bound_for: 1, boarded_at: Time.current)
+
+    subscribe
+
+    sent = transmissions.last["balloons"].index_by { _1["id"] }
+    assert sent[balloons(:bob_flying).id]["on_ship"]
+    assert_not sent[balloons(:flying).id]["on_ship"]
   end
 
   test "定期処理からの snapshot を全員向けに配信する" do
