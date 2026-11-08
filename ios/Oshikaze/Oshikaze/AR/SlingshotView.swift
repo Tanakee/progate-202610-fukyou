@@ -14,7 +14,6 @@ struct SlingshotView: View {
     /// 画面を開いたときに1回だけ作る。地図は毎秒何度も描き直されるので、
     /// ここで `= SkyScene()` と書くと、描き直しのたびに AR の部品を作っては捨ててしまう
     @State private var scene: SkyScene?
-    @State private var pull = CGSize.zero
     @State private var aimedTitle: String?
     @State private var message: String?
     @State private var sounds = Sounds()
@@ -50,6 +49,9 @@ struct SlingshotView: View {
                     .overlay(alignment: .topTrailing) { closeButton.padding() }
             }
         }
+        // パチンコを引く操作を、下の端のiOSの操作（簡易アクセスやホームへ戻る）より先に受け付ける
+        .defersSystemGestures(on: .bottom)
+        .persistentSystemOverlays(.hidden)
         .task { await run() }
         .onDisappear { scene?.stop() }
     }
@@ -104,56 +106,17 @@ struct SlingshotView: View {
             .allowsHitTesting(false)
     }
 
-    /// 二股のフォークとゴム。石をつかんで引き、放すと飛ぶ
+    /// 画面下のパチンコ。放すと弾が飛ぶ
     private var slingshot: some View {
-        let stone = CGPoint(x: 100 + pull.width, y: 60 + pull.height)
-        return ZStack {
-            Path { path in
-                path.move(to: CGPoint(x: 50, y: 60))
-                path.addLine(to: stone)
-                path.addLine(to: CGPoint(x: 150, y: 60))
+        SlingshotPad { pull in
+            scene?.fire(pull: pull)
+            if hypot(pull.width, pull.height) > 20 {
+                sounds.play(.shot)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
-            .stroke(Color.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-            Path { path in
-                path.move(to: CGPoint(x: 100, y: 200))
-                path.addLine(to: CGPoint(x: 100, y: 120))
-                path.addLine(to: CGPoint(x: 50, y: 60))
-                path.move(to: CGPoint(x: 100, y: 120))
-                path.addLine(to: CGPoint(x: 150, y: 60))
-            }
-            .stroke(Color.brown, style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
-            Circle()
-                .fill(.white)
-                .frame(width: 30, height: 30)
-                .shadow(radius: 3)
-                .position(stone)
         }
-        .frame(width: 200, height: 200)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    pull = Self.limited(value.translation)
-                }
-                .onEnded { _ in
-                    scene?.fire(pull: pull)
-                    if hypot(pull.width, pull.height) > 20 {
-                        sounds.play(.shot)
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    }
-                    withAnimation(.interpolatingSpring(stiffness: 300, damping: 8)) { pull = .zero }
-                }
-        )
-        .padding(.bottom, 8)
-        .accessibilityLabel("パチンコ。下に引いて放すと、狙った方向に飛びます")
-    }
-
-    /// ゴムが伸びすぎないようにする
-    private static func limited(_ translation: CGSize) -> CGSize {
-        let length = hypot(translation.width, translation.height)
-        let maxLength: CGFloat = 130
-        guard length > maxLength else { return translation }
-        return CGSize(width: translation.width / length * maxLength, height: translation.height / length * maxLength)
+        // 画面の下の端から離して、簡易アクセス（下の端を下になぞると画面全体が降りる）と重ならないようにする
+        .padding(.bottom, 56)
     }
 
     // MARK: - 風船の入れ替えと当たり
