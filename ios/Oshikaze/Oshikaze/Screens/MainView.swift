@@ -36,7 +36,8 @@ struct MainView: View {
                 Annotation("", coordinate: balloon.coordinate, anchor: .bottom) {
                     BalloonMark(id: balloon.id,
                                 isPlaying: balloon.id == session.currentBalloonID && isListening,
-                                isMine: balloon.id == myBalloon.balloon?.id)
+                                isMine: balloon.id == myBalloon.balloon?.id,
+                                isOnShip: balloon.isOnShip)
                 }
             }
         }
@@ -285,17 +286,57 @@ private struct LaunchButton: View {
     }
 }
 
-/// 地図の上の風船。つやと結び目とひもがあり、風に揺れる。今聴いている風船は大きく光り、♪ が浮かぶ
+/// 地図の上の風船。つやと結び目とひもがあり、風に揺れる。今聴いている風船は大きく光り、♪ が浮かぶ。
+/// 港から船に乗っている間は、風船の色の船になって波に揺れる
 private struct BalloonMark: View {
     let id: Int
     let isPlaying: Bool
     let isMine: Bool
+    let isOnShip: Bool
 
     @State private var swaying = false
 
     var body: some View {
         let color = Theme.balloonColor(for: id)
         let size: CGFloat = isPlaying ? 40 : 24
+        Group {
+            if isOnShip {
+                ship(color: color, size: size)
+            } else {
+                balloon(color: color, size: size)
+            }
+        }
+        .overlay(alignment: .top) {
+            if isPlaying {
+                FloatingNotes(color: color)
+                    .offset(y: -18)
+            }
+        }
+        .rotationEffect(.degrees(swaying ? 5 : -5), anchor: .bottom)
+        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: isPlaying)
+        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: isOnShip)
+        .onAppear {
+            // 風船ごとに少しずつ周期をずらし、そろって揺れないようにする
+            withAnimation(.easeInOut(duration: 1.8 + Double(id % 5) * 0.25).repeatForever(autoreverses: true)) {
+                swaying = true
+            }
+        }
+    }
+
+    private func ship(color: Color, size: CGFloat) -> some View {
+        Image(systemName: "ferry.fill")
+            .font(.system(size: size * 0.6, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: size * 1.3, height: size * 1.3)
+            .background(Circle().fill(color))
+            .overlay {
+                Circle().strokeBorder(.white, lineWidth: isMine ? 2.5 : 1.5)
+            }
+            .shadow(color: isPlaying ? color : .black.opacity(0.18), radius: isPlaying ? 12 : 3, y: isPlaying ? 0 : 2)
+            .transition(.scale.combined(with: .opacity))
+    }
+
+    private func balloon(color: Color, size: CGFloat) -> some View {
         VStack(spacing: 0) {
             ZStack {
                 Ellipse()
@@ -329,20 +370,7 @@ private struct BalloonMark: View {
                 .stroke(Theme.ink.opacity(0.35), lineWidth: 1)
                 .frame(width: 6, height: isPlaying ? 22 : 14)
         }
-        .overlay(alignment: .top) {
-            if isPlaying {
-                FloatingNotes(color: color)
-                    .offset(y: -18)
-            }
-        }
-        .rotationEffect(.degrees(swaying ? 5 : -5), anchor: .bottom)
-        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: isPlaying)
-        .onAppear {
-            // 風船ごとに少しずつ周期をずらし、そろって揺れないようにする
-            withAnimation(.easeInOut(duration: 1.8 + Double(id % 5) * 0.25).repeatForever(autoreverses: true)) {
-                swaying = true
-            }
-        }
+        .transition(.scale.combined(with: .opacity))
     }
 
     private struct Triangle: Shape {

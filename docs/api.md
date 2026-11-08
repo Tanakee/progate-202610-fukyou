@@ -82,11 +82,11 @@ Action Cableで提供する、サーバーから端末への配信専用の接�
   "server_time": "...",
   "speed_scale": 1,
   "balloons": [
-    { "id": 1, "track_id": 7, "lat": 34.7, "lng": 135.5, "ve": 2.12, "vn": -4.01 }
+    { "id": 1, "track_id": 7, "lat": 34.7, "lng": 135.5, "ve": 2.12, "vn": -4.01, "on_ship": false }
   ]
 }
 ```
 
-全員向けチャンネルは `BalloonsChannel` です（`{"command":"subscribe","identifier":"{\"channel\":\"BalloonsChannel\"}"}` で購読）。同じチャンネルに複数のイベントを流すため、`event` で種類を見分けます。`seq` は送った時刻のミリ秒で、大きいほど新しい配信です。`ve` / `vn` は東向き・北向きの風の速さ（m/s、`speed_scale` を掛ける前）です。
+全員向けチャンネルは `BalloonsChannel` です（`{"command":"subscribe","identifier":"{\"channel\":\"BalloonsChannel\"}"}` で購読）。同じチャンネルに複数のイベントを流すため、`event` で種類を見分けます。`seq` は送った時刻のミリ秒で、大きいほど新しい配信です。`ve` / `vn` は東向き・北向きの風の速さ（m/s、`speed_scale` を掛ける前）です。`on_ship` は港から船に乗って航路を進んでいる間 `true` になります。
 
 `balloons.snapshot` が地図の状態の正で、新しい風船も次の配信で届きます。飛ばした人（`user_id`）は載せません。

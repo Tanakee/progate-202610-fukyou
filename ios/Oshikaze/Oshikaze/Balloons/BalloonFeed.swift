@@ -23,6 +23,7 @@ final class BalloonFeed {
     private struct Leg {
         let id: Int
         let trackID: Int
+        let isOnShip: Bool
         let from: CLLocationCoordinate2D
         let to: CLLocationCoordinate2D
     }
@@ -201,7 +202,7 @@ final class BalloonFeed {
             let coordinate = CLLocationCoordinate2D(latitude: item.lat, longitude: item.lng)
             guard CLLocationCoordinate2DIsValid(coordinate), removedAt[item.id] == nil else { return nil }
             // 初めて届いた風船は、届いた位置にそのまま出す
-            return Leg(id: item.id, trackID: item.trackID, from: shown[item.id] ?? coordinate, to: coordinate)
+            return Leg(id: item.id, trackID: item.trackID, isOnShip: item.onShip, from: shown[item.id] ?? coordinate, to: coordinate)
         }
         legStartedAt = .now
         updatePositions()
@@ -228,7 +229,8 @@ final class BalloonFeed {
     private func updatePositions() {
         let fraction = Date.now.timeIntervalSince(legStartedAt) / Self.legDuration
         balloons = legs.map { leg in
-            Balloon(id: leg.id, trackID: leg.trackID, coordinate: Self.interpolate(from: leg.from, to: leg.to, fraction: fraction))
+            Balloon(id: leg.id, trackID: leg.trackID, coordinate: Self.interpolate(from: leg.from, to: leg.to, fraction: fraction),
+                    isOnShip: leg.isOnShip)
         }
     }
 }

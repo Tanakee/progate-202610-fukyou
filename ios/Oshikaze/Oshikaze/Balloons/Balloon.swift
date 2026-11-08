@@ -5,9 +5,11 @@ struct Balloon: Identifiable, Equatable {
     let id: Int
     let trackID: Int
     let coordinate: CLLocationCoordinate2D
+    /// 港から船に乗って、航路を進んでいる
+    var isOnShip = false
 
     static func == (lhs: Balloon, rhs: Balloon) -> Bool {
-        lhs.id == rhs.id && lhs.trackID == rhs.trackID
+        lhs.id == rhs.id && lhs.trackID == rhs.trackID && lhs.isOnShip == rhs.isOnShip
             && lhs.coordinate.latitude == rhs.coordinate.latitude
             && lhs.coordinate.longitude == rhs.coordinate.longitude
     }
@@ -23,10 +25,12 @@ struct BalloonsSnapshot: Decodable {
         /// 東向き・北向きの風の速さ（m/s、speed_scale を掛ける前）
         let ve: Double
         let vn: Double
+        let onShip: Bool
 
         enum CodingKeys: String, CodingKey {
             case id, lat, lng, ve, vn
             case trackID = "track_id"
+            case onShip = "on_ship"
         }
     }
 

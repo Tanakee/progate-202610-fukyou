@@ -11,8 +11,8 @@ class BalloonsChannel < ApplicationCable::Channel
       seq: (now.to_f * 1000).to_i,
       server_time: now,
       speed_scale: Rails.configuration.x.speed_scale,
-      balloons: Balloon.flying.pluck(:id, :track_id, :lat, :lng, :speed_east, :speed_north).map do |id, track_id, lat, lng, ve, vn|
-        { id:, track_id:, lat:, lng:, ve:, vn: }
+      balloons: Balloon.flying.pluck(:id, :track_id, :lat, :lng, :speed_east, :speed_north, :bound_for).map do |id, track_id, lat, lng, ve, vn, bound_for|
+        { id:, track_id:, lat:, lng:, ve:, vn:, on_ship: !bound_for.nil? }
       end
     }
   end
