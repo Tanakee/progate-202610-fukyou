@@ -137,6 +137,10 @@ L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
   attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
 }).addTo(map);
 const markers = new Map();
+// 次の snapshot までの間、前の位置から届いた位置へ、この時間をかけて動かす。
+// ve・vn で先の位置を推し量らないのは、船に乗った風船は曲がり角で向きを変え、陸の上をまっすぐ進んで見えるから
+const TWEEN_MS = 5000;
+const tweens = new Map();
 
 let socket = null;
 let snapshotCount = 0;
@@ -209,12 +213,27 @@ function showSnapshot(snapshot) {
   for (const balloon of snapshot.balloons) {
     const position = [balloon.lat, balloon.lng];
     const label = `風船 ${balloon.id}（曲 ${balloon.track_id}）<br>ve ${balloon.ve.toFixed(2)} / vn ${balloon.vn.toFixed(2)} m/s`;
-    if (markers.has(balloon.id)) markers.get(balloon.id).setLatLng(position).setPopupContent(label);
-    else markers.set(balloon.id, L.circleMarker(position, { radius: 7, color: "#1f5f8b", fillOpacity: 0.8 }).bindPopup(label).addTo(map));
+    if (markers.has(balloon.id)) {
+      const marker = markers.get(balloon.id).setPopupContent(label);
+      tweens.set(balloon.id, { from: marker.getLatLng(), to: L.latLng(position), startedAt: now });
+    } else {
+      markers.set(balloon.id, L.circleMarker(position, { radius: 7, color: "#1f5f8b", fillOpacity: 0.8 }).bindPopup(label).addTo(map));
+    }
   }
+  for (const id of tweens.keys()) if (!ids.has(id)) tweens.delete(id);
 
   previousPositions = new Map(snapshot.balloons.map((balloon) => [balloon.id, { lat: balloon.lat, lng: balloon.lng }]));
 }
+
+function animate() {
+  const now = Date.now();
+  for (const [id, { from, to, startedAt }] of tweens) {
+    const t = Math.min((now - startedAt) / TWEEN_MS, 1);
+    markers.get(id)?.setLatLng([from.lat + (to.lat - from.lat) * t, from.lng + (to.lng - from.lng) * t]);
+  }
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
 
 function connect() {
   setState("接続中…", "warn");

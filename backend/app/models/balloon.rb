@@ -33,13 +33,7 @@ class Balloon < ApplicationRecord
   end
 
   def self.move_flying!(wind:, speed_scale:, now: Time.current)
-    rows = flying.map do |balloon|
-      east, north = WindGrid.velocity(wind, balloon.lat, balloon.lng)
-      meters = speed_scale * (now - balloon.moved_at)
-      lat = balloon.lat + north * meters / METERS_PER_DEGREE
-      lng = balloon.lng + east * meters / (METERS_PER_DEGREE * Math.cos(balloon.lat * Math::PI / 180))
-      { id: balloon.id, lat:, lng:, speed_east: east, speed_north: north, lost: !JapanEez.cover?(lat, lng) }
-    end
+    rows = flying.map { |balloon| balloon.bound_for ? balloon.sail(now:, speed_scale:) : balloon.drift(wind:, speed_scale:, now:) }
     return if rows.empty?
 
     # 1行ずつ update すると、5秒ごとに風船の数だけ SQL が走るので、JSON で渡してまとめて1文にする。
@@ -48,9 +42,45 @@ class Balloon < ApplicationRecord
       UPDATE balloons
       SET lat = v.lat, lng = v.lng, speed_east = v.speed_east, speed_north = v.speed_north, moved_at = ?,
           status = CASE WHEN v.lost THEN 'lost' ELSE balloons.status END,
-          ended_at = CASE WHEN v.lost THEN ? ELSE balloons.ended_at END
-      FROM jsonb_to_recordset(?::jsonb) AS v(id bigint, lat float8, lng float8, speed_east float8, speed_north float8, lost boolean)
+          ended_at = CASE WHEN v.lost THEN ? ELSE balloons.ended_at END,
+          last_port = v.last_port, bound_for = v.bound_for, boarded_at = v.boarded_at
+      FROM jsonb_to_recordset(?::jsonb) AS v(id bigint, lat float8, lng float8, speed_east float8, speed_north float8, lost boolean,
+                                             last_port integer, bound_for integer, boarded_at timestamp)
       WHERE balloons.id = v.id AND balloons.status = 'flying'
     SQL
   end
+
+  def drift(wind:, speed_scale:, now:)
+    east, north = WindGrid.velocity(wind, lat, lng)
+    meters = speed_scale * (now - moved_at)
+    to = [ lat + north * meters / METERS_PER_DEGREE, lng + east * meters / (METERS_PER_DEGREE * Math.cos(lat * Math::PI / 180)) ]
+
+    port = SeaRoutes.port_near([ lat, lng ], to, origin: [ origin_lat, origin_lng ], except: last_port)
+    return board(port, SeaRoutes.pick(port), boarded_at: now, speed_scale:) if port
+
+    row(*to, east, north, lost: !JapanEez.cover?(*to))
+  end
+
+  def sail(now:, speed_scale:)
+    fraction = (now - boarded_at) / SeaRoutes::VOYAGE.to_f
+    return land if fraction >= 1
+
+    board(last_port, bound_for, boarded_at:, speed_scale:, fraction:)
+  end
+
+  private
+    def board(from, to, boarded_at:, speed_scale:, fraction: 0)
+      lat, lng, east, north = SeaRoutes.at(from, to, fraction)
+      # 端末は ve・vn に speed_scale をかけて位置を補うので、船の実際の速さを倍率で割って渡す。
+      # jsonb_to_recordset の timestamp は時差を読み捨てるので、DB と同じ UTC にして渡す
+      row(lat, lng, east / speed_scale, north / speed_scale, last_port: from, bound_for: to, boarded_at: boarded_at.utc)
+    end
+
+    def land
+      row(*SeaRoutes::POINTS[bound_for], 0.0, 0.0, last_port: bound_for)
+    end
+
+    def row(lat, lng, east, north, lost: false, last_port: self.last_port, bound_for: nil, boarded_at: nil)
+      { id:, lat:, lng:, speed_east: east, speed_north: north, lost:, last_port:, bound_for:, boarded_at: }
+    end
 end
