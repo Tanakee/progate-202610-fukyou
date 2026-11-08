@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// 画面下のパチンコ。木のY字にパステルのテープを巻いた持ち手、伸びるゴム、受け皿、つやのある弾を描く。
+/// 画面下のパチンコ。木のY字、伸びるゴム、受け皿、つやのある弾を描く。
 /// 引いている間は飛ぶ向きと強さを点線で出し、放すとゴムがぶるんと戻る
 struct SlingshotPad: View {
     /// 放したときの引いた量（画面のポイント）
@@ -25,7 +25,6 @@ struct SlingshotPad: View {
 
     private static let woodLight = Color(red: 0.89, green: 0.68, blue: 0.45)
     private static let woodDark = Color(red: 0.72, green: 0.48, blue: 0.29)
-    private static let tapeColors = [Theme.heart, Theme.balloonColors[5], Theme.balloonColors[2]]
     private static let ammo = Theme.balloonColors[8]
 
     var body: some View {
@@ -90,7 +89,7 @@ struct SlingshotPad: View {
         drawAmmo(in: &context, at: stone)
     }
 
-    /// 木のY字と、テープを巻いた持ち手
+    /// 木のY字と、ゴムを結んだ先端のこぶ
     private func drawFork(in context: inout GraphicsContext) {
         var fork = Path()
         fork.move(to: Self.bottom)
@@ -107,14 +106,6 @@ struct SlingshotPad: View {
         // 左側に細い光を入れて、丸みのある木に見せる
         context.stroke(fork.offsetBy(dx: -4, dy: -2), with: .color(.white.opacity(0.28)),
                        style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-
-        // 持ち手のテープ
-        for (index, color) in Self.tapeColors.enumerated() {
-            let y = 176 + CGFloat(index) * 20
-            let tape = Path(roundedRect: CGRect(x: Self.bottom.x - 13, y: y, width: 26, height: 12), cornerRadius: 4)
-            context.fill(tape.applying(CGAffineTransform(rotationAngle: -0.18)
-                .concatenating(CGAffineTransform(translationX: y * 0.18 * 0.18, y: 0))), with: .color(color))
-        }
 
         // ゴムを結んだ先端のこぶ
         for tip in [Self.leftTip, Self.rightTip] {
@@ -190,10 +181,13 @@ struct SlingshotPad: View {
         UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.4 + 0.2 * CGFloat(level))
     }
 
-    /// ゴムが伸びすぎないようにする
+    /// パチンコは下に引いて撃つもの。上には引けないようにし、横は下に引いた量までに抑える。
+    /// 上や真横に引いても撃てると、下向きや真横へ飛んで、あらぬ方向に見える
     private static func limited(_ translation: CGSize) -> CGSize {
-        let length = hypot(translation.width, translation.height)
-        guard length > maxPull else { return translation }
-        return CGSize(width: translation.width / length * maxPull, height: translation.height / length * maxPull)
+        let down = max(translation.height, 0)
+        let side = min(max(translation.width, -down), down)
+        let length = hypot(side, down)
+        guard length > maxPull else { return CGSize(width: side, height: down) }
+        return CGSize(width: side / length * maxPull, height: down / length * maxPull)
     }
 }
