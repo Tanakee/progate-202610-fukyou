@@ -51,6 +51,16 @@ class TestBalloonPlacement
     [ 26.2124, 127.6809 ]  # 沖縄県・那覇市
   ].map(&:freeze).freeze
 
+  # 回収されて飛んでいる風船がなくなると、配置し直すものがなくデモを続けられない。
+  # 押した本人の曲を飛ばさないのは、本人がアプリから風船を飛ばせなくなるから（飛行中は1人1個まで）
+  def self.launch_idle_tracks(except:)
+    Track.where.not(user: except).where.not(user_id: Balloon.flying.select(:user_id))
+      .group_by(&:user).each do |user, tracks|
+        lat, lng = POINTS.sample
+        user.balloons.create!(track: tracks.sample, origin_label: "デモ", origin_lat: lat, origin_lng: lng)
+      end
+  end
+
   def self.call
     Balloon.transaction do
       # 定期移動と同じ順番でロックし、古い位置からの移動結果に上書きされるのを防ぐ。

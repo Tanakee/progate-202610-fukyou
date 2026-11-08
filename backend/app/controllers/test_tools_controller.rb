@@ -12,6 +12,7 @@ class TestToolsController < ApplicationController
   end
 
   def reposition_balloons
+    TestBalloonPlacement.launch_idle_tracks(except: current_user)
     count = TestBalloonPlacement.call
     BalloonsChannel.broadcast_snapshot
     render json: { updated_count: count }
