@@ -26,6 +26,13 @@ struct MainView: View {
     var body: some View {
         Map(position: $position) {
             UserAnnotation()
+            // 港は風船より下に描く
+            ForEach(visiblePorts) { port in
+                Annotation(port.name, coordinate: port.coordinate, anchor: .center) {
+                    PortMark(port: port)
+                }
+                .annotationTitles(.hidden)
+            }
             ForEach(session.visibleBalloons) { balloon in
                 Annotation("", coordinate: balloon.coordinate, anchor: .bottom) {
                     BalloonMark(id: balloon.id,
@@ -156,6 +163,56 @@ struct MainView: View {
         withAnimation(.easeInOut(duration: 1.5)) {
             position = .camera(MapCamera(centerCoordinate: coordinate, distance: 80_000, heading: 0, pitch: 55))
         }
+    }
+
+    /// 地図を寄せているときだけ、見えている辺りの港を出す。
+    /// 日本全体を見ているときに229港すべてを出すと、風船が埋もれ、毎秒の描き直しも重くなる
+    private var visiblePorts: [Port] {
+        guard let camera, camera.distance < Self.portVisibleDistance else { return [] }
+        // 傾けると遠くまで見えるので、視点の高さの1.5倍までを「見えている辺り」とする
+        let radius = camera.distance * 1.5
+        return Port.all.filter { Geo.distance($0.coordinate, camera.centerCoordinate) < radius }
+    }
+
+    /// これより寄せたら港を出す（視点の高さ、m）
+    private static let portVisibleDistance: Double = 1_200_000
+}
+
+/// 港のアイコン。日本海側は青緑、太平洋側は青。タップすると港の名前を出す
+private struct PortMark: View {
+    let port: Port
+    @State private var showsName = false
+
+    private var color: Color {
+        port.side == .japanSea ? Color(red: 0.25, green: 0.70, blue: 0.68) : Color(red: 0.30, green: 0.52, blue: 0.90)
+    }
+
+    var body: some View {
+        Image(systemName: "ferry.fill")
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 22, height: 22)
+            .background(Circle().fill(color.gradient))
+            .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+            .shadow(color: color.opacity(0.35), radius: 3, y: 1)
+            .overlay(alignment: .bottom) {
+                if showsName {
+                    Text(port.name + "港")
+                        .font(Theme.font(11, .bold, relativeTo: .caption))
+                        .foregroundStyle(Theme.ink)
+                        .fixedSize()
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(.white))
+                        .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+                        .offset(y: 24)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .onTapGesture {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { showsName.toggle() }
+            }
+            .accessibilityLabel("\(port.name)港（\(port.side == .japanSea ? "日本海側" : "太平洋側")）")
     }
 }
 
