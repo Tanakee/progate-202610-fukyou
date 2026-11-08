@@ -1,5 +1,5 @@
 class TracksController < ApplicationController
-  skip_before_action :authenticate, only: :show
+  skip_before_action :authenticate, only: [ :show, :audio ]
 
   def show
     @track = Track.find_by(id: params[:id])
@@ -15,6 +15,32 @@ class TracksController < ApplicationController
     @tracks = current_user.tracks.order(id: :desc)
   end
 
+  # 音源をRails経由で返し、実機からMinIOへ直接つながなくて済むようにする。
+  # AVPlayerが先頭だけを取得してすぐ再生したりシークしたりできるよう、単一のRangeリクエストに対応する。
+  def audio
+    track = Track.find(params[:id])
+    blob = track.audio.blob
+    range = requested_range(blob.byte_size)
+
+    return range_not_satisfiable(blob.byte_size) if range == :invalid
+
+    response.headers["Accept-Ranges"] = "bytes"
+    response.headers["Content-Type"] = "audio/mpeg"
+
+    if request.head?
+      response.headers["Content-Length"] = blob.byte_size.to_s
+      return head :ok
+    end
+
+    if range
+      response.headers["Content-Range"] = "bytes #{range.begin}-#{range.end}/#{blob.byte_size}"
+      send_data blob.download_chunk(range), type: "audio/mpeg", disposition: :inline,
+        filename: blob.filename.to_s, status: :partial_content
+    else
+      send_data blob.download, type: "audio/mpeg", disposition: :inline, filename: blob.filename.to_s
+    end
+  end
+
   def create
     if params[:file]
       create_from_file
@@ -24,6 +50,36 @@ class TracksController < ApplicationController
   end
 
   private
+    def requested_range(size)
+      header = request.headers["Range"]
+      return nil if header.blank?
+
+      match = /\Abytes=(\d*)-(\d*)\z/.match(header)
+      return :invalid unless match && (match[1].present? || match[2].present?)
+
+      if match[1].present?
+        first = match[1].to_i
+        return :invalid if first >= size
+
+        last = match[2].present? ? [ match[2].to_i, size - 1 ].min : size - 1
+        return :invalid if last < first
+      else
+        suffix_size = match[2].to_i
+        return :invalid if suffix_size <= 0
+
+        first = [ size - suffix_size, 0 ].max
+        last = size - 1
+      end
+
+      first..last
+    end
+
+    def range_not_satisfiable(size)
+      response.headers["Accept-Ranges"] = "bytes"
+      response.headers["Content-Range"] = "bytes */#{size}"
+      head :range_not_satisfiable
+    end
+
     def create_from_file
       input = params.permit(:title, :artist, :file)
 

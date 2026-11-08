@@ -22,7 +22,9 @@ Rails.application.routes.draw do
       resources :journeys, only: :index
     end
 
-    resources :tracks, only: [:create, :show]
+    resources :tracks, only: [ :create, :show ] do
+      get :audio, on: :member
+    end
 
     resources :balloons, only: :create do
       scope module: :balloons do

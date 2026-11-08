@@ -10,7 +10,7 @@ class CollectionsTest < ActionDispatch::IntegrationTest
     assert_equal balloon.id, json["balloon_id"]
     assert_equal Date.current.to_s, json["collected_on"]
     assert_equal({ "id" => tracks(:bob_song).id, "title" => "空の向こう", "artist" => "推しバンド" }, json["track"].except("mp3_url"))
-    assert_match %r{/rails/active_storage/disk/.+/song\.mp3\z}, json["track"]["mp3_url"]
+    assert_equal "http://www.example.com/tracks/#{tracks(:bob_song).id}/audio", json["track"]["mp3_url"]
     assert_equal "collected", balloon.reload.status
     assert balloon.ended_at
   end
