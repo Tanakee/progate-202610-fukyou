@@ -187,7 +187,7 @@ struct SlingshotView: View {
             let favorites: [Favorite] = try await auth.client.send(.get, "me/favorites")
             // 端末のタイムゾーンで今日を決めないのは、1日1回の区切りがサーバーの日本時間の0時だから
             let today = Date.now.formatted(Date.ISO8601FormatStyle(timeZone: TimeZone(identifier: "Asia/Tokyo")!).year().month().day())
-            todaysFavorite = favorites.first { $0.collectedOn == today }
+            todaysFavorite = favorites.first { $0.collectedOn == today && !$0.dailyLimitExempt }
         } catch {
             auth.handle(error)
         }

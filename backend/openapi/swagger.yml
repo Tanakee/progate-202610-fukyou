@@ -808,7 +808,7 @@ components:
 
     Favorite:
       type: object
-      required: [id, balloon_id, collected_on, track]
+      required: [id, balloon_id, collected_on, daily_limit_exempt, track]
       properties:
         id:
           type: integer
@@ -823,6 +823,10 @@ components:
           format: date
           description: 回収した日（日本時間）
           example: '2026-11-06'
+        daily_limit_exempt:
+          type: boolean
+          description: 検証用APIで回収上限をリセットした回収なら true。1日1回の判定に数えない
+          example: false
         track:
           $ref: '#/components/schemas/Track'
 
