@@ -26,6 +26,13 @@ struct MainView: View {
     var body: some View {
         Map(position: $position) {
             UserAnnotation()
+            // 港は風船より下に描く
+            ForEach(visiblePorts) { port in
+                Annotation(port.name, coordinate: port.coordinate, anchor: .center) {
+                    PortMark(port: port)
+                }
+                .annotationTitles(.hidden)
+            }
             ForEach(session.visibleBalloons) { balloon in
                 Annotation("", coordinate: balloon.coordinate, anchor: .bottom) {
                     BalloonMark(id: balloon.id,
@@ -156,6 +163,111 @@ struct MainView: View {
         withAnimation(.easeInOut(duration: 1.5)) {
             position = .camera(MapCamera(centerCoordinate: coordinate, distance: 80_000, heading: 0, pitch: 55))
         }
+    }
+
+    /// 地図を寄せているときだけ、見えている辺りの港を出す。
+    /// 日本全体を見ているときに229港すべてを出すと、風船が埋もれ、毎秒の描き直しも重くなる
+    private var visiblePorts: [Port] {
+        guard let camera, camera.distance < Self.portVisibleDistance else { return [] }
+        // 傾けると遠くまで見えるので、視点の高さの1.5倍までを「見えている辺り」とする
+        let radius = camera.distance * 1.5
+        return Port.all.filter { Geo.distance($0.coordinate, camera.centerCoordinate) < radius }
+    }
+
+    /// これより寄せたら港を出す（視点の高さ、m）
+    private static let portVisibleDistance: Double = 1_200_000
+}
+
+/// 港のアイコン。日本海側は青緑、太平洋側は青。タップすると港の名前を出す
+private struct PortMark: View {
+    let port: Port
+    @State private var showsName = false
+
+    private var color: Color {
+        port.side == .japanSea ? Color(red: 0.25, green: 0.70, blue: 0.68) : Color(red: 0.30, green: 0.52, blue: 0.90)
+    }
+
+    var body: some View {
+        Image(systemName: "ferry.fill")
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 22, height: 22)
+            .background(Circle().fill(color.gradient))
+            .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+            .shadow(color: color.opacity(0.35), radius: 3, y: 1)
+            .overlay(alignment: .bottom) {
+                if showsName {
+                    Text(port.name + "港")
+                        .font(Theme.font(11, .bold, relativeTo: .caption))
+                        .foregroundStyle(Theme.ink)
+                        .fixedSize()
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(.white))
+                        .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+                        .offset(y: 24)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .onTapGesture {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { showsName.toggle() }
+            }
+            .accessibilityLabel("\(port.name)港（\(port.side == .japanSea ? "日本海側" : "太平洋側")）")
+    }
+}
+
+/// 右上の地図のボタン。現在地へ戻る、2D と 3D を切り替える、北を上に戻す（回したときだけ出す）
+private struct MapButtons: View {
+    let camera: MapCamera?
+    let userLocation: CLLocationCoordinate2D?
+    let move: (MapCamera) -> Void
+
+    private var isTilted: Bool { (camera?.pitch ?? 0) > 5 }
+    private var isRotated: Bool {
+        let heading = camera?.heading ?? 0
+        return min(heading, 360 - heading) > 3
+    }
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Button {
+                guard let userLocation else { return }
+                move(MapCamera(centerCoordinate: userLocation, distance: camera?.distance ?? 400_000,
+                               heading: camera?.heading ?? 0, pitch: camera?.pitch ?? 50))
+            } label: {
+                RoundIcon(systemName: "location.fill", size: 44)
+            }
+            .accessibilityLabel("現在地へ戻る")
+
+            Button {
+                guard let camera else { return }
+                move(MapCamera(centerCoordinate: camera.centerCoordinate, distance: camera.distance,
+                               heading: camera.heading, pitch: isTilted ? 0 : 50))
+            } label: {
+                Text(isTilted ? "2D" : "3D")
+                    .font(Theme.font(15, .bold))
+                    .foregroundStyle(Theme.sky)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(.white))
+                    .shadow(color: Theme.sky.opacity(0.35), radius: 8, y: 4)
+            }
+            .accessibilityLabel(isTilted ? "真上から見る" : "傾けて見る")
+
+            if isRotated, let camera {
+                Button {
+                    move(MapCamera(centerCoordinate: camera.centerCoordinate, distance: camera.distance,
+                                   heading: 0, pitch: camera.pitch))
+                } label: {
+                    // 針は北を指すように、地図の向きと逆に回す
+                    RoundIcon(systemName: "location.north.fill", size: 44, color: Theme.heart)
+                        .rotationEffect(.degrees(-camera.heading))
+                }
+                .accessibilityLabel("北を上にする")
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .buttonStyle(.bouncy)
+        .animation(.spring, value: isRotated)
     }
 }
 

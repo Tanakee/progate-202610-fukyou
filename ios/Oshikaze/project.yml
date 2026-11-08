@@ -11,6 +11,9 @@ targets:
     platform: iOS
     sources:
       - Oshikaze
+      # 港のデータ（#30）。コピーせず、BEのファイルをそのまま同梱する
+      - path: ../../backend/config/sea_routes.json
+        buildPhase: resources
     settings:
       base:
         SWIFT_VERSION: "5.0"
