@@ -9,6 +9,7 @@ struct MyTracksView: View {
     @State private var isImporting = false
     @State private var errorMessage: String?
     @State private var demoMessage: String?
+    @State private var isRunningDemo = false
 
     var body: some View {
         List {
@@ -57,9 +58,11 @@ struct MyTracksView: View {
                 Button("今日の回収をリセットする") {
                     Task { await resetFavoriteLimit() }
                 }
+                .disabled(isRunningDemo)
                 Button("風船を日本各地に配置する") {
                     Task { await repositionBalloons() }
                 }
+                .disabled(isRunningDemo)
                 if let demoMessage {
                     Text(demoMessage).foregroundStyle(.secondary)
                 }
@@ -98,6 +101,8 @@ struct MyTracksView: View {
     }
 
     private func resetFavoriteLimit() async {
+        isRunningDemo = true
+        defer { isRunningDemo = false }
         do {
             let result: [String: Int] = try await auth.client.send(.post, "test_reset_favorite_limit")
             demoMessage = result["reset_count"] == 0 ? "今日はまだ回収していません" : "今日の回収をリセットしました。もう1曲回収できます"
@@ -108,6 +113,8 @@ struct MyTracksView: View {
     }
 
     private func repositionBalloons() async {
+        isRunningDemo = true
+        defer { isRunningDemo = false }
         do {
             let result: [String: Int] = try await auth.client.send(.post, "test_reposition_balloons")
             demoMessage = "\(result["updated_count"] ?? 0)個の風船を日本各地に配置しました"

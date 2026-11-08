@@ -59,6 +59,8 @@ class TestBalloonPlacement
       .group_by(&:user).each do |user, tracks|
         lat, lng = POINTS.sample
         user.balloons.create!(track: tracks.sample, origin_label: "デモ", origin_lat: lat, origin_lng: lng)
+      rescue ActiveRecord::RecordNotUnique
+        # 同時に押されると、もう一方のリクエストが先にこの人の風船を飛ばしている
       end
   end
 
