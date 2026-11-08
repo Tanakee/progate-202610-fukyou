@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "監視の構成",
+    "subtitle": "sre/ のコンテナが、何をどこから集めて管理画面に出すか",
+    "animation": "trace",
+    "output": "diagrams/architecture-monitoring-20261108-140000/monitoring.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "推し風 API",
+      "sublabel": "app（Rails）",
+      "pos": [
+        40,
+        120
+      ],
+      "size": [
+        190,
+        76
+      ]
+    },
+    {
+      "id": "balloons",
+      "type": "backend",
+      "label": "風船同期バッチ",
+      "sublabel": "balloons:move",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        190,
+        76
+      ]
+    },
+    {
+      "id": "wind",
+      "type": "backend",
+      "label": "風データ取得バッチ",
+      "sublabel": "wind:fetch",
+      "pos": [
+        40,
+        460
+      ],
+      "size": [
+        190,
+        76
+      ]
+    },
+    {
+      "id": "infra",
+      "type": "database",
+      "label": "db・redis・minio",
+      "sublabel": "PostgreSQL・Redis・MinIO",
+      "pos": [
+        40,
+        640
+      ],
+      "size": [
+        190,
+        76
+      ]
+    },
+    {
+      "id": "runtime",
+      "type": "cloud",
+      "label": "Docker Desktop の VM",
+      "sublabel": "containerd・docker.sock・cgroup /fukyou/<サービス>",
+      "pos": [
+        40,
+        820
+      ],
+      "size": [
+        300,
+        76
+      ],
+      "brand": "docker"
+    },
+    {
+      "id": "blackbox",
+      "type": "backend",
+      "label": "blackbox",
+      "sublabel": "/up の死活・応答時間",
+      "pos": [
+        420,
+        120
+      ],
+      "size": [
+        190,
+        76
+      ]
+    },
+    {
+      "id": "pushgateway",
+      "type": "backend",
+      "label": "pushgateway",
+      "sublabel": "定期処理の成否・秒数・回数",
+      "pos": [
+        420,
+        300
+      ],
+      "size": [
+        210,
+        76
+      ]
+    },
+    {
+      "id": "cadvisor",
+      "type": "backend",
+      "label": "cadvisor",
+      "sublabel": "CPU・メモリとその上限",
+      "pos": [
+        420,
+        640
+      ],
+      "size": [
+        190,
+        76
+      ]
+    },
+    {
+      "id": "alloy",
+      "type": "backend",
+      "label": "alloy",
+      "sublabel": "全コンテナの標準出力",
+      "pos": [
+        420,
+        820
+      ],
+      "size": [
+        190,
+        76
+      ]
+    },
+    {
+      "id": "prometheus",
+      "type": "database",
+      "label": "prometheus",
+      "sublabel": "メトリクス（7日）",
+      "pos": [
+        740,
+        380
+      ],
+      "size": [
+        190,
+        80
+      ],
+      "brand": "prometheus"
+    },
+    {
+      "id": "loki",
+      "type": "database",
+      "label": "loki",
+      "sublabel": "ログ（3日）",
+      "pos": [
+        740,
+        820
+      ],
+      "size": [
+        190,
+        80
+      ]
+    },
+    {
+      "id": "grafana",
+      "type": "frontend",
+      "label": "grafana",
+      "sublabel": "ダッシュボード・監視26件の判定",
+      "pos": [
+        1050,
+        560
+      ],
+      "size": [
+        230,
+        80
+      ],
+      "brand": "grafana"
+    },
+    {
+      "id": "setup",
+      "type": "backend",
+      "label": "grafana-setup",
+      "sublabel": "monitors.py の監視を API で登録",
+      "pos": [
+        1050,
+        820
+      ],
+      "size": [
+        230,
+        76
+      ]
+    },
+    {
+      "id": "admin",
+      "type": "frontend",
+      "label": "管理画面を見る人",
+      "sublabel": "http://localhost:3001",
+      "pos": [
+        1360,
+        560
+      ],
+      "size": [
+        190,
+        76
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "監視される側",
+      "wraps": [
+        "app",
+        "balloons",
+        "wind",
+        "infra"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "収集",
+      "wraps": [
+        "blackbox",
+        "pushgateway",
+        "cadvisor",
+        "alloy"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "保存と判定",
+      "wraps": [
+        "prometheus",
+        "loki",
+        "grafana",
+        "setup"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "id": "blackbox-app",
+      "from": "blackbox",
+      "to": "app",
+      "label": "GET /up（Host: localhost）"
+    },
+    {
+      "id": "balloons-pushgateway",
+      "from": "balloons",
+      "to": "pushgateway",
+      "label": "1回ごとに POST",
+      "variant": "emphasis"
+    },
+    {
+      "id": "wind-pushgateway",
+      "from": "wind",
+      "to": "pushgateway",
+      "label": "1回ごとに POST",
+      "variant": "emphasis"
+    },
+    {
+      "id": "cadvisor-runtime",
+      "from": "cadvisor",
+      "to": "runtime",
+      "label": "cgroup の名前からサービス名"
+    },
+    {
+      "id": "alloy-runtime",
+      "from": "alloy",
+      "to": "runtime",
+      "label": "docker.sock からログ"
+    },
+    {
+      "id": "prometheus-blackbox",
+      "from": "prometheus",
+      "to": "blackbox",
+      "label": "15秒ごとに取得"
+    },
+    {
+      "id": "prometheus-pushgateway",
+      "from": "prometheus",
+      "to": "pushgateway",
+      "label": "15秒ごとに取得"
+    },
+    {
+      "id": "prometheus-cadvisor",
+      "from": "prometheus",
+      "to": "cadvisor",
+      "label": "15秒ごとに取得"
+    },
+    {
+      "id": "alloy-loki",
+      "from": "alloy",
+      "to": "loki",
+      "label": "ログを送る"
+    },
+    {
+      "id": "grafana-prometheus",
+      "from": "grafana",
+      "to": "prometheus",
+      "label": "10秒ごとに評価"
+    },
+    {
+      "id": "grafana-loki",
+      "from": "grafana",
+      "to": "loki",
+      "label": "ログを検索"
+    },
+    {
+      "id": "setup-grafana",
+      "from": "setup",
+      "to": "grafana",
+      "label": "監視を登録（ON/OFF は残す）",
+      "variant": "dashed"
+    },
+    {
+      "id": "admin-grafana",
+      "from": "admin",
+      "to": "grafana",
+      "label": "見る・ON/OFF",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "何を見ているか",
+      "items": [
+        "6つのサービスごとに CPU使用率・メモリ使用率・稼働",
+        "風船同期バッチは成功の途絶・失敗・処理時間、風データ取得バッチは成功の途絶・失敗",
+        "推し風 API は死活と応答時間（/up）。確認用の /up_broken は普段 OFF"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "アラートの閾値",
+      "items": [
+        "CPU は上限の80%、メモリは90%を超えて2分続いたら",
+        "稼働はコンテナが1分見えない、/up は1分応答しない",
+        "風船同期バッチは60秒、風データ取得バッチは5分成功していなかったら"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "ON/OFF",
+      "items": [
+        "監視は Grafana で判定し、管理画面の「アラートルール」で1件ずつ一時停止できる",
+        "ファイルではなく API で登録するのは、ファイルから読んだルールは画面で止められないから",
+        "OFF にした監視は、作り直しても OFF のまま残る"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Docker Desktop での工夫",
+      "items": [
+        "containerd のイメージストアでは cAdvisor に compose のラベルが見えないので、cgroup を /fukyou/<サービス> に分けて見分ける",
+        "定期処理には HTTP の口がないので、Prometheus から読まず Pushgateway へ送る",
+        "開発の Rails は app というホスト名を断るので、Host: localhost で /up を叩く"
+      ]
+    }
+  ]
+}
