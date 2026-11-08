@@ -37,6 +37,9 @@ final class SkyScene {
     private var updateSubscription: Cancellable?
     private var elapsed: Double = 0
     private var aimedID: Int?
+    /// 今聴いている曲の風船。大きくして光の輪と ♪ を付ける
+    private var playingID: Int?
+    private lazy var highlight = Self.makeHighlight()
 
     private struct BalloonNode {
         let entity: Entity
@@ -88,7 +91,8 @@ final class SkyScene {
     // MARK: - 風船
 
     /// 浮かべる風船を入れ替える。近い順に並んでいる前提で、近いほど手前に置く
-    func show(_ targets: [SkyTarget], from here: CLLocationCoordinate2D) {
+    func show(_ targets: [SkyTarget], from here: CLLocationCoordinate2D, playingID: Int?) {
+        defer { markPlaying(playingID) }
         let ids = Set(targets.map(\.id))
         for (id, node) in balloons where !ids.contains(id) {
             node.entity.removeFromParent()
@@ -106,6 +110,45 @@ final class SkyScene {
                 balloons[target.id] = BalloonNode(entity: entity, basePosition: position, phase: Double(target.id))
             }
         }
+    }
+
+    /// 光の輪と ♪ を、今聴いている風船へ付け替える
+    private func markPlaying(_ id: Int?) {
+        playingID = id
+        guard let id, let node = balloons[id] else {
+            highlight.removeFromParent()
+            return
+        }
+        if highlight.parent !== node.entity {
+            node.entity.addChild(highlight)
+        }
+    }
+
+    /// 風船を包む淡い光の輪と、上に浮かぶ ♪。♪ は常にこちらを向かせる
+    private static func makeHighlight() -> Entity {
+        let highlight = Entity()
+        var glow = UnlitMaterial(color: .white)
+        glow.blending = .transparent(opacity: 0.35)
+        let halo = ModelEntity(mesh: .generateSphere(radius: balloonRadius * 1.45), materials: [glow])
+        halo.scale = [1, 1.2, 1]
+        let note = ModelEntity(mesh: .generateText("♪", extrusionDepth: 0.06, font: .systemFont(ofSize: 1.3, weight: .bold)),
+                               materials: [UnlitMaterial(color: .white)])
+        // 文字のメッシュは左下が原点なので、中心をそろえる
+        let bounds = note.visualBounds(relativeTo: nil)
+        note.position = [-bounds.center.x, -bounds.center.y, 0]
+        let noteHolder = Entity()
+        noteHolder.position = [0, balloonRadius * 2.2, 0]
+        noteHolder.components.set(BillboardComponent())
+        noteHolder.addChild(note)
+        highlight.addChild(halo)
+        highlight.addChild(noteHolder)
+        return highlight
+    }
+
+    /// 今聴いている風船は1.5倍にしてゆっくり脈打たせ、当たりも同じだけ広げる
+    private func scale(of id: Int) -> Float {
+        guard id == playingID else { return 1 }
+        return 1.5 + 0.08 * Float(sin(elapsed * 3))
     }
 
     /// 方角は実際のとおり、距離と高さは見やすさのために決める
@@ -169,8 +212,9 @@ final class SkyScene {
         let dt = Float(deltaTime)
 
         // 風に揺れているように、ゆっくり上下させる
-        for node in balloons.values {
+        for (id, node) in balloons {
             node.entity.position = node.basePosition + [0, Float(sin(elapsed * 0.8 + node.phase)) * 0.4, 0]
+            node.entity.scale = SIMD3(repeating: scale(of: id))
         }
 
         for index in projectiles.indices.reversed() {
@@ -178,7 +222,7 @@ final class SkyScene {
             projectiles[index].age += deltaTime
             let stone = projectiles[index].entity
             stone.position += projectiles[index].velocity * dt
-            if let hit = balloons.first(where: { simd_distance($0.value.entity.position, stone.position) < Self.hitRadius }) {
+            if let hit = balloons.first(where: { simd_distance($0.value.entity.position, stone.position) < Self.hitRadius * scale(of: $0.key) }) {
                 stone.removeFromParent()
                 projectiles.remove(at: index)
                 burst(hit.key)
