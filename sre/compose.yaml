@@ -1,0 +1,130 @@
+# 監視の仕組み。リポジトリ直下の compose.yaml から include するので、docker compose up で一緒に起動する
+services:
+  prometheus:
+    cgroup_parent: /fukyou/prometheus
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+      - probe_targets:/prometheus-targets:ro
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 512M }
+
+  # コンテナごとの CPU・メモリ・上限を Prometheus に渡す
+  cadvisor:
+    cgroup_parent: /fukyou/cadvisor
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    command:
+      # Docker Desktop は containerd のイメージストアを使うので、Docker 経由ではコンテナを見分けられない。containerd に直接つなぐ
+      - --docker_only=false
+      - --containerd=/run/containerd/containerd.sock
+      - --containerd-namespace=moby
+      - --housekeeping_interval=10s
+      # サービス名は cgroup の名前から取るので、ラベルは持たせない（系列が増えすぎる）
+      - --store_container_labels=false
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+
+  # 定期処理が1回ごとに成否を送る先。定期処理には Prometheus が読みに行く HTTP の口がない
+  pushgateway:
+    cgroup_parent: /fukyou/pushgateway
+    image: prom/pushgateway:v1.11.1
+    deploy:
+      resources:
+        limits: { cpus: "0.1", memory: 64M }
+
+  # API の /up を外から叩いて、生きているかと応答時間を測る
+  blackbox:
+    cgroup_parent: /fukyou/blackbox
+    image: prom/blackbox-exporter:v0.27.0
+    command: ["--config.file=/etc/blackbox/blackbox.yml"]
+    volumes:
+      - ./blackbox:/etc/blackbox:ro
+    deploy:
+      resources:
+        limits: { cpus: "0.1", memory: 64M }
+
+  loki:
+    cgroup_parent: /fukyou/loki
+    image: grafana/loki:3.5.3
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ./loki:/etc/loki:ro
+      - loki_data:/loki
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 512M }
+
+  # 全コンテナの標準出力を Loki へ送る
+  alloy:
+    cgroup_parent: /fukyou/alloy
+    image: grafana/alloy:v1.10.0
+    command: ["run", "--server.http.listen-addr=0.0.0.0:12345", "--storage.path=/var/lib/alloy/data", "/etc/alloy/config.alloy"]
+    volumes:
+      - ./alloy:/etc/alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    deploy:
+      resources:
+        limits: { cpus: "0.25", memory: 256M }
+
+  grafana:
+    cgroup_parent: /fukyou/grafana
+    image: grafana/grafana:12.0.2
+    environment:
+      # 手元だけで開く管理画面なので、ログインなしで管理者として入れる
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/overview.json
+      GF_USERS_DEFAULT_LANGUAGE: ja-JP
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      # 監視の ON/OFF をコンテナを作り直しても残すため
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+
+  # 監視（アラートルール）を Grafana に登録し、ON の監視のヘルスチェック先だけを Prometheus に渡し続ける。一覧は grafana/monitors.py
+  monitor-sync:
+    cgroup_parent: /fukyou/monitor-sync
+    image: python:3.13-alpine
+    command: ["python", "-I", "-u", "/sre/monitors.py"]
+    volumes:
+      - ./grafana/monitors.py:/sre/monitors.py:ro
+      - probe_targets:/prometheus-targets
+    depends_on:
+      - grafana
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "0.25", memory: 64M }
+
+volumes:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+  # ヘルスチェック先のファイル。monitor-sync が書き、Prometheus が読む
+  probe_targets:

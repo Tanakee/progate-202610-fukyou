@@ -1,0 +1,8 @@
+modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      # 開発の Rails は知らないホスト名（app）を 403 で断るので、許されている localhost として叩く
+      headers:
+        Host: localhost

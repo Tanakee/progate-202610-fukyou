@@ -1,0 +1,419 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "実行時の構成",
+    "subtitle": "docker compose のアプリと監視（sre/）のコンテナ、そのつながり",
+    "animation": "trace",
+    "output": "diagrams/architecture-runtime-20261108-140000/runtime.html",
+    "locale": "ja",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "youtube",
+      "type": "external",
+      "label": "YouTube（オープンデータ）",
+      "sublabel": "曲の音声",
+      "pos": [
+        30,
+        40
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "ios",
+      "type": "frontend",
+      "label": "iOSアプリ",
+      "sublabel": "REST・WebSocket",
+      "pos": [
+        50,
+        220
+      ],
+      "size": [
+        160,
+        72
+      ]
+    },
+    {
+      "id": "viewer",
+      "type": "frontend",
+      "label": "確認用ページ",
+      "sublabel": "websocket-viewer.html",
+      "pos": [
+        50,
+        420
+      ],
+      "size": [
+        160,
+        72
+      ]
+    },
+    {
+      "id": "admin",
+      "type": "frontend",
+      "label": "管理画面を見る人",
+      "sublabel": "ブラウザ",
+      "pos": [
+        50,
+        720
+      ],
+      "size": [
+        160,
+        72
+      ]
+    },
+    {
+      "id": "minio",
+      "type": "cloud",
+      "label": "minio",
+      "sublabel": "音声ストレージ（S3互換）",
+      "pos": [
+        340,
+        40
+      ],
+      "size": [
+        190,
+        72
+      ]
+    },
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "app",
+      "sublabel": "Rails API + Action Cable",
+      "pos": [
+        340,
+        220
+      ],
+      "size": [
+        190,
+        80
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "messagebus",
+      "label": "redis",
+      "sublabel": "Redis 7.4 Pub/Sub",
+      "pos": [
+        640,
+        190
+      ],
+      "size": [
+        180,
+        72
+      ],
+      "brand": "redis"
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "db",
+      "sublabel": "PostgreSQL 17",
+      "pos": [
+        640,
+        420
+      ],
+      "size": [
+        180,
+        80
+      ],
+      "brand": "postgresql"
+    },
+    {
+      "id": "balloons",
+      "type": "backend",
+      "label": "風船同期バッチ",
+      "sublabel": "rails balloons:move（5秒）",
+      "pos": [
+        930,
+        190
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "wind",
+      "type": "backend",
+      "label": "風データ取得バッチ",
+      "sublabel": "rails wind:fetch（1分）",
+      "pos": [
+        930,
+        420
+      ],
+      "size": [
+        200,
+        80
+      ]
+    },
+    {
+      "id": "om",
+      "type": "external",
+      "label": "Open-Meteo（オープンデータ）",
+      "sublabel": "837地点の風",
+      "pos": [
+        1200,
+        420
+      ],
+      "size": [
+        250,
+        72
+      ]
+    },
+    {
+      "id": "grafana",
+      "type": "frontend",
+      "label": "grafana",
+      "sublabel": "管理画面・監視26件の判定",
+      "pos": [
+        340,
+        720
+      ],
+      "size": [
+        190,
+        80
+      ],
+      "brand": "grafana"
+    },
+    {
+      "id": "store",
+      "type": "database",
+      "label": "prometheus・loki",
+      "sublabel": "メトリクス・ログ",
+      "pos": [
+        640,
+        720
+      ],
+      "size": [
+        180,
+        80
+      ],
+      "brand": "prometheus"
+    },
+    {
+      "id": "collect",
+      "type": "backend",
+      "label": "収集",
+      "sublabel": "cAdvisor・Pushgateway・Blackbox・Alloy",
+      "pos": [
+        930,
+        720
+      ],
+      "size": [
+        250,
+        80
+      ]
+    },
+    {
+      "id": "mlit",
+      "type": "external",
+      "label": "国土数値情報（オープンデータ）",
+      "sublabel": "国土交通省 港湾間流通量・海上経路",
+      "pos": [
+        1200,
+        190
+      ],
+      "size": [
+        260,
+        72
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "端末",
+      "wraps": [
+        "ios",
+        "viewer",
+        "admin"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "docker compose（アプリ）",
+      "wraps": [
+        "minio",
+        "app",
+        "redis",
+        "db",
+        "balloons",
+        "wind"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "docker compose（監視 sre/）",
+      "wraps": [
+        "grafana",
+        "store",
+        "collect"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "id": "ios-app",
+      "from": "ios",
+      "to": "app",
+      "label": "REST・WebSocket /ws",
+      "variant": "emphasis"
+    },
+    {
+      "id": "app-viewer",
+      "from": "app",
+      "to": "viewer",
+      "label": "WebSocket /ws"
+    },
+    {
+      "id": "ios-minio",
+      "from": "ios",
+      "to": "minio",
+      "label": "署名付きURLで Range 取得",
+      "variant": "emphasis",
+      "labelDx": 40
+    },
+    {
+      "id": "app-minio",
+      "from": "app",
+      "to": "minio",
+      "label": "保存・URL発行"
+    },
+    {
+      "id": "app-youtube",
+      "from": "app",
+      "to": "youtube",
+      "label": "yt-dlp",
+      "variant": "dashed"
+    },
+    {
+      "id": "app-db",
+      "from": "app",
+      "to": "db",
+      "label": "読み書き"
+    },
+    {
+      "id": "redis-app",
+      "from": "redis",
+      "to": "app",
+      "label": "snapshot を購読"
+    },
+    {
+      "id": "balloons-redis",
+      "from": "balloons",
+      "to": "redis",
+      "label": "snapshot を publish"
+    },
+    {
+      "id": "balloons-db",
+      "from": "balloons",
+      "to": "db",
+      "label": "全風船を1文で更新"
+    },
+    {
+      "id": "balloons-mlit",
+      "from": "balloons",
+      "to": "mlit",
+      "label": "港と航路（取り込み済み）",
+      "variant": "dashed"
+    },
+    {
+      "id": "wind-db",
+      "from": "wind",
+      "to": "db",
+      "label": "風を保存"
+    },
+    {
+      "id": "wind-om",
+      "from": "wind",
+      "to": "om",
+      "label": "HTTPS で風を取得",
+      "variant": "dashed"
+    },
+    {
+      "id": "balloons-collect",
+      "from": "balloons",
+      "to": "collect",
+      "label": "1回ごとの成否を push",
+      "variant": "dashed"
+    },
+    {
+      "id": "wind-collect",
+      "from": "wind",
+      "to": "collect",
+      "label": "成否を push",
+      "variant": "dashed"
+    },
+    {
+      "id": "collect-app",
+      "from": "collect",
+      "to": "app",
+      "label": "/up を叩く",
+      "variant": "dashed"
+    },
+    {
+      "id": "collect-store",
+      "from": "collect",
+      "to": "store",
+      "label": "メトリクス・ログ"
+    },
+    {
+      "id": "grafana-store",
+      "from": "grafana",
+      "to": "store",
+      "label": "問い合わせ"
+    },
+    {
+      "id": "admin-grafana",
+      "from": "admin",
+      "to": "grafana",
+      "label": "ダッシュボード・監視の ON/OFF",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "リソースの上限",
+      "items": [
+        "全13コンテナに CPU とメモリの上限を決め、Docker Desktop の約8GBを1つで使い切らないようにした",
+        "app は ffmpeg の変換を見込み CPU 2・メモリ1G、風船同期バッチは CPU 1・512M",
+        "監視の7コンテナは合計で CPU 2.45・メモリ約1.9G"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "監視",
+      "items": [
+        "コンテナの CPU・メモリ・稼働、定期処理の成否と処理時間、API の /up を見る",
+        "監視は「【対象】観点」の26件で、管理画面から1件ずつ ON/OFF できる",
+        "アラートは通知せず、管理画面で見る"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "音声の配信",
+      "items": [
+        "アプリは Rails を通さず、minio の署名付きURL（1日有効）から mp3 を Range で読む",
+        "アップロードされた音声は ffmpeg で 128kbps の固定ビットレートにして保存する"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "オープンデータ",
+      "items": [
+        "Open-Meteo：風データ取得バッチが、格子点ごとの風を HTTPS で取る",
+        "国土数値情報（国土交通省）：港湾間流通量・海上経路の港229か所を config/sea_routes.json に取り込み、風船同期バッチが港に着いた風船を船で運ぶのに使う",
+        "YouTube：曲の登録で受け取った URL から、app が yt-dlp で mp3 を取り出す"
+      ]
+    }
+  ]
+}

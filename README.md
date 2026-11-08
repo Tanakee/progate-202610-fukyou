@@ -78,6 +78,43 @@ docker compose exec app ruby bin/rails db:drop db:create db:migrate
 curl -I -H "Range: bytes=0-1023" "<mp3_url>"   # 206 Partial Content が返れば Range で読める
 ```
 
+## 監視（SRE）
+
+`docker compose up` で、監視の仕組み（`sre/`）も一緒に起動します。管理画面は Grafana の `http://localhost:3001` です（ログインなし、日本語）。
+
+| コンテナ | 役割 |
+| --- | --- |
+| `prometheus` | メトリクスを集める（`http://localhost:9090`） |
+| `cadvisor` | コンテナごとの CPU・メモリと、その上限 |
+| `pushgateway` | 定期処理（`wind:fetch`・`balloons:move`）が1回ごとに送る成否・かかった秒数 |
+| `blackbox` | API の `/up` に応答があるか、応答時間 |
+| `loki`・`alloy` | 全コンテナの標準出力のログ（3日分） |
+| `grafana` | 管理画面。ダッシュボード「推し風 SRE」と、監視（アラートルール）の判定 |
+| `monitor-sync` | 監視の一覧（`sre/grafana/monitors.py`）を Grafana に登録し、ON の監視のヘルスチェック先だけを Prometheus に渡し続ける |
+
+- 各コンテナの CPU とメモリの上限は、`compose.yaml` と `sre/compose.yaml` の `deploy.resources.limits` に書いています
+- アラートは通知せず、管理画面で見ます
+
+### 監視の一覧
+
+監視は「【対象】観点」の名前で、`sre/grafana/monitors.py` に書いています。管理画面の左のメニューの「アラート」→「アラートルール」で一覧を見られ、監視ごとに一時停止（OFF）できます。OFF にした監視は、`docker compose up` し直しても OFF のままです。API の死活・応答時間のように外から叩く監視は、OFF にすると15秒ほどで叩くのもやめます（`/up` は死活と応答時間の両方が OFF のときだけ止まります）。
+
+| 対象 | 観点 | アラートになる条件 |
+| --- | --- | --- |
+| 推し風 API・風船同期バッチ・風データ取得バッチ・DB（PostgreSQL）・配信（Redis）・音声ストレージ（MinIO） | CPU使用率 | 上限の80%を超えて2分続く |
+| 〃 | メモリ使用率 | 上限の90%を超えて2分続く（上限に達すると強制終了される） |
+| 〃 | 稼働 | コンテナが1分以上見えない |
+| 推し風 風船同期バッチ（`balloons:move`） | 成功の途絶 | 60秒以上成功していない |
+| 〃 | 失敗 | 直近5分に1回でも失敗した |
+| 〃 | 処理時間 | 1回が5秒の間隔を超えて1分続く |
+| 推し風 風データ取得バッチ（`wind:fetch`） | 成功の途絶 | 5分以上成功していない |
+| 〃 | 失敗 | 直近5分に1回でも失敗した |
+| 推し風 API | 死活（/up） | ヘルスチェック（15秒ごと）が1回失敗したら保留中、2回続けて失敗したらアラート |
+| 〃 | 応答時間（/up） | `/up` の応答に1秒以上かかる状態が5分続く |
+| 〃 | 死活（/up_broken・確認用） | 存在しないパスを叩くので、ON にすると約40秒で必ず発生する。アラートの出方を確かめるためのもので、普段は OFF |
+
+Docker Desktop は containerd のイメージストアを使うため、cAdvisor からは compose のサービス名が見えません。そこで `cgroup_parent` でサービスごとに cgroup を `/fukyou/<サービス名>` に分け、その名前からサービスを見分けています。サービスを足したときは `cgroup_parent` も足してください。
+
 ## API 仕様（Swagger UI）
 
 API 仕様は `backend/openapi/swagger.yml` にあります。リポジトリ直下で次を実行し、`http://localhost:8080` を開くと Swagger UI で読めます。
