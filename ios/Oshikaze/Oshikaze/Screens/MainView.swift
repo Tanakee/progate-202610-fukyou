@@ -27,29 +27,30 @@ struct MainView: View {
             ForEach(session.visibleBalloons) { balloon in
                 Annotation("", coordinate: balloon.coordinate, anchor: .bottom) {
                     BalloonMark(id: balloon.id,
-                                isPlaying: balloon.id == session.currentBalloonID,
+                                isPlaying: balloon.id == session.currentBalloonID && isListening,
                                 isMine: balloon.id == myBalloon.balloon?.id)
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        // 風船が主役なので、地図は色を落とし、お店などの印も消す
+        .mapStyle(.standard(elevation: .realistic, emphasis: .muted, pointsOfInterest: .excludingAll))
         .mapControls {
             MapUserLocationButton()
             MapCompass()
             MapPitchToggle()
         }
+        .overlay(alignment: .top) {
+            SkyTint()
+        }
         .safeAreaInset(edge: .bottom) {
             VStack(alignment: .trailing, spacing: 12) {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     Button {
                         showsSky = true
                     } label: {
-                        Label("空を見上げる", systemImage: "binoculars.fill")
-                            .font(.headline)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(.regularMaterial, in: Capsule())
+                        PillLabel(title: "空を見上げる", systemImage: "binoculars.fill")
                     }
+                    .buttonStyle(.bouncy)
                     .accessibilityHint("カメラで空を見て、パチンコで風船を割れます。スマホを振っても開きます")
                     LaunchButton(balloon: myBalloon.balloon) {
                         if let balloon = myBalloon.balloon {
@@ -68,6 +69,7 @@ struct MainView: View {
                 }
             }
             .padding(.horizontal)
+            .padding(.bottom, 4)
         }
         .confirmationDialog("この曲を今日の1曲として回収しますか？", isPresented: $confirmsCollect, titleVisibility: .visible) {
             Button("回収する") {
@@ -81,6 +83,7 @@ struct MainView: View {
         }
         .sheet(isPresented: $showsLaunch) {
             LaunchSheet()
+                .presentationCornerRadius(32)
         }
         .fullScreenCover(isPresented: $showsSky) {
             SlingshotView()
@@ -105,17 +108,15 @@ struct MainView: View {
             Button {
                 showsAccount = true
             } label: {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 36))
-                    .symbolRenderingMode(.hierarchical)
-                    .padding(8)
-                    .background(.regularMaterial, in: Circle())
+                RoundIcon(systemName: "person.fill", size: 48)
             }
+            .buttonStyle(.bouncy)
             .accessibilityLabel("マイページ")
             .padding(.leading)
         }
         .sheet(isPresented: $showsAccount) {
             AccountSheet()
+                .presentationCornerRadius(32)
         }
         .overlay {
             if session.location.isDenied {
@@ -163,6 +164,19 @@ struct MainView: View {
     }
 }
 
+/// 時間帯に合わせた空の色を、地図の上の方に薄く重ねる。1分ごとに色を選び直す
+private struct SkyTint: View {
+    var body: some View {
+        TimelineView(.everyMinute) { context in
+            LinearGradient(colors: Theme.skyColors(at: context.date).map { $0.opacity(0.55) } + [.clear],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: 260)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+    }
+}
+
 /// 飛ばすボタン。飛行中は「🎈 12回」のように聴かれた回数を出し、押すと自分の風船へ移動する
 private struct LaunchButton: View {
     let balloon: MyBalloon?
@@ -170,78 +184,168 @@ private struct LaunchButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label {
-                Text(balloon.map { "\($0.playCount)回" } ?? "飛ばす")
-                    .font(.headline)
-                    .monospacedDigit()
-            } icon: {
-                Text("🎈")
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(.regularMaterial, in: Capsule())
+            PillLabel(title: balloon.map { "\($0.playCount)回" } ?? "飛ばす", systemImage: "balloon.fill", color: Theme.heart)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(.spring, value: balloon?.playCount)
         }
+        .buttonStyle(.bouncy)
         .accessibilityLabel(balloon.map { "自分の風船。\($0.playCount)回聴かれました" } ?? "風船を飛ばす")
     }
 }
 
+/// 地図の上の風船。つやと結び目とひもがあり、風に揺れる。今聴いている風船は大きく光り、♪ が浮かぶ
 private struct BalloonMark: View {
     let id: Int
     let isPlaying: Bool
     let isMine: Bool
 
-    private static let colors: [Color] = [.red, .orange, .yellow, .green, .mint, .teal, .cyan, .blue, .indigo, .purple, .pink]
+    @State private var swaying = false
 
     var body: some View {
-        let color = Self.colors[id % Self.colors.count]
+        let color = Theme.balloonColor(for: id)
+        let size: CGFloat = isPlaying ? 40 : 24
         VStack(spacing: 0) {
-            Circle()
-                .fill(color.gradient)
-                .overlay(Circle().stroke(isMine ? .yellow : .white, lineWidth: isPlaying || isMine ? 3 : 1))
-                .overlay { if isMine { Image(systemName: "star.fill").font(.caption2).foregroundStyle(.white) } }
-                .frame(width: isPlaying ? 32 : 18, height: isPlaying ? 32 : 18)
-                .shadow(color: isPlaying ? color : .black.opacity(0.3), radius: isPlaying ? 8 : 2)
-            Rectangle()
-                .fill(.secondary)
-                .frame(width: 1, height: isPlaying ? 14 : 8)
+            ZStack {
+                Ellipse()
+                    .fill(RadialGradient(colors: [color.mix(with: .white, by: 0.45), color],
+                                         center: UnitPoint(x: 0.35, y: 0.3), startRadius: 1, endRadius: size * 0.7))
+                // 左上のつや
+                Ellipse()
+                    .fill(.white.opacity(0.75))
+                    .frame(width: size * 0.22, height: size * 0.32)
+                    .rotationEffect(.degrees(-25))
+                    .offset(x: -size * 0.18, y: -size * 0.2)
+                if isMine {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: size * 0.35))
+                        .foregroundStyle(.white)
+                }
+            }
+            .frame(width: size, height: size * 1.18)
+            .overlay {
+                if isMine {
+                    Ellipse().strokeBorder(.white, lineWidth: 2.5)
+                }
+            }
+            .shadow(color: isPlaying ? color : .black.opacity(0.18), radius: isPlaying ? 12 : 3, y: isPlaying ? 0 : 2)
+            // 結び目
+            Triangle()
+                .fill(color)
+                .frame(width: size * 0.22, height: size * 0.14)
+            // ゆるく曲がったひも
+            BalloonString()
+                .stroke(Theme.ink.opacity(0.35), lineWidth: 1)
+                .frame(width: 6, height: isPlaying ? 22 : 14)
         }
-        .animation(.spring, value: isPlaying)
+        .overlay(alignment: .top) {
+            if isPlaying {
+                FloatingNotes(color: color)
+                    .offset(y: -18)
+            }
+        }
+        .rotationEffect(.degrees(swaying ? 5 : -5), anchor: .bottom)
+        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: isPlaying)
+        .onAppear {
+            // 風船ごとに少しずつ周期をずらし、そろって揺れないようにする
+            withAnimation(.easeInOut(duration: 1.8 + Double(id % 5) * 0.25).repeatForever(autoreverses: true)) {
+                swaying = true
+            }
+        }
+    }
+
+    private struct Triangle: Shape {
+        func path(in rect: CGRect) -> Path {
+            Path { path in
+                path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+                path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+                path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+                path.closeSubpath()
+            }
+        }
+    }
+
+    private struct BalloonString: Shape {
+        func path(in rect: CGRect) -> Path {
+            Path { path in
+                path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+                path.addCurve(to: CGPoint(x: rect.midX, y: rect.maxY),
+                              control1: CGPoint(x: rect.maxX, y: rect.height * 0.35),
+                              control2: CGPoint(x: rect.minX, y: rect.height * 0.65))
+            }
+        }
     }
 }
 
+/// 今聴いている風船から、♪ がふわふわ浮かんでは消える
+private struct FloatingNotes: View {
+    let color: Color
+    @State private var rising = false
+
+    var body: some View {
+        ZStack {
+            note("music.note", x: -10, delay: 0)
+            note("music.note.list", x: 12, delay: 0.7)
+        }
+        .onAppear { rising = true }
+    }
+
+    private func note(_ name: String, x: CGFloat, delay: Double) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(color.mix(with: .black, by: 0.15))
+            .offset(x: x, y: rising ? -20 : 0)
+            .opacity(rising ? 0 : 1)
+            .animation(.easeOut(duration: 1.6).repeatForever(autoreverses: false).delay(delay), value: rising)
+    }
+}
+
+/// 下部の再生バー。曲ごとに色が変わる（サムネイルがあればそこから、なければ風船の色）
 private struct PlaybackBar: View {
     @Environment(ListeningSession.self) private var session
+    @Environment(ArtworkColors.self) private var artworkColors
     @Binding var isListening: Bool
     let onCollect: () -> Void
 
+    private var accent: Color {
+        artworkColors.color(for: session.currentTrack?.thumbnailURL)
+            ?? session.currentBalloonID.map(Theme.balloonColor(for:))
+            ?? Theme.sky
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
+            Artwork(url: session.currentTrack?.thumbnailURL, color: accent, isPlaying: isListening && session.currentTrack != nil)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.headline)
+                    .font(Theme.font(17, .bold, relativeTo: .headline))
+                    .foregroundStyle(Theme.ink)
                     .lineLimit(1)
                 Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.font(13, .medium, relativeTo: .subheadline))
+                    .foregroundStyle(Theme.ink.opacity(0.6))
                     .lineLimit(1)
             }
-            Spacer()
+            Spacer(minLength: 4)
             Button(action: onCollect) {
-                Image(systemName: "heart.circle")
-                    .font(.system(size: 36))
+                RoundIcon(systemName: "heart.fill", size: 42, color: Theme.heart)
             }
+            .buttonStyle(.bouncy)
             .disabled(session.currentTrack == nil)
+            .opacity(session.currentTrack == nil ? 0.5 : 1)
             .accessibilityLabel("この曲を回収する")
             Button {
                 isListening.toggle()
             } label: {
-                Image(systemName: isListening ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 44))
+                RoundIcon(systemName: isListening ? "pause.fill" : "play.fill", size: 50, color: accent, filled: true)
+                    .contentTransition(.symbolEffect(.replace))
             }
+            .buttonStyle(.bouncy)
             .accessibilityLabel(isListening ? "止める" : "流す")
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .softCard(tint: accent)
+        .animation(.easeInOut(duration: 0.6), value: accent)
     }
 
     private var title: String {
@@ -258,11 +362,46 @@ private struct PlaybackBar: View {
         }
         guard let track = session.currentTrack else { return "\(session.feed.balloons.count)個の風船が飛んでいます" }
         guard let meters = session.currentDistance else { return track.artist }
-        return "\(track.artist)・\(Self.formatDistance(meters))先の風船"
+        return "\(track.artist)・\(Self.formatDistance(meters))先から"
     }
 
     private static func formatDistance(_ meters: Double) -> String {
         meters < 1000 ? "\(Int(meters))m" : String(format: "%.0fkm", meters / 1000)
+    }
+}
+
+/// 再生バーの左の丸い絵。サムネイルがあれば出し、なければ風船の色に 🎈 を置く。流れている間はゆっくり回る
+private struct Artwork: View {
+    let url: URL?
+    let color: Color
+    let isPlaying: Bool
+    @State private var angle: Double = 0
+
+    var body: some View {
+        ZStack {
+            Circle().fill(color.gradient)
+            if let url {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Image(systemName: "balloon.fill").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
+                }
+            } else {
+                Image(systemName: "balloon.fill").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
+            }
+        }
+        .frame(width: 52, height: 52)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(.white, lineWidth: 3))
+        .shadow(color: color.opacity(0.4), radius: 6, y: 3)
+        .rotationEffect(.degrees(angle))
+        .onChange(of: isPlaying, initial: true) { _, playing in
+            if playing {
+                withAnimation(.linear(duration: 12).repeatForever(autoreverses: false)) { angle = 360 }
+            } else {
+                withAnimation(.easeOut(duration: 0.4)) { angle = 0 }
+            }
+        }
     }
 }
 
@@ -271,21 +410,22 @@ private struct LocationDeniedView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "location.slash.circle.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(.secondary)
+            Image(systemName: "location.circle.fill").font(.system(size: 60)).foregroundStyle(Theme.sky)
             Text("位置情報をオンにしてください")
-                .font(.title3.bold())
+                .font(Theme.font(20, .bold, relativeTo: .title3))
             Text("近くを漂う風船の曲を流すために、現在地を使います。現在地はサーバーへ送りません。")
+                .font(Theme.font(15))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-            Button("設定を開く") {
+                .foregroundStyle(Theme.ink.opacity(0.7))
+            Button {
                 if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+            } label: {
+                PillLabel(title: "設定を開く", systemImage: "gearshape.fill")
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bouncy)
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.regularMaterial)
+        .background(LinearGradient(colors: Theme.skyColors(), startPoint: .top, endPoint: .bottom))
     }
 }

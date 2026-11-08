@@ -60,6 +60,7 @@ struct LaunchSheet: View {
             }
         }
         .navigationTitle("風船を飛ばす")
+        .skyBackground()
         .task {
             do {
                 try await tracks.loadMyTracks(with: auth)

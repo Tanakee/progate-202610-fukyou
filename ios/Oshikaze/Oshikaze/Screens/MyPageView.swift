@@ -27,6 +27,7 @@ struct MyPageView: View {
             }
         }
         .navigationTitle("マイページ")
+        .skyBackground()
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -68,6 +69,7 @@ private struct FavoritesList: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
         .refreshable { await load() }
         .task { await load() }
         .onDisappear { stopPreview() }
@@ -141,6 +143,7 @@ private struct JourneysList: View {
                 .padding(.vertical, 4)
             }
         }
+        .scrollContentBackground(.hidden)
         .refreshable { await load() }
         .task { await load() }
     }

@@ -9,10 +9,12 @@ struct OshikazeApp: App {
     @State private var myBalloon: MyBalloonStore
     @State private var pops: PopStore
     @State private var session: ListeningSession
+    @State private var artworkColors = ArtworkColors()
     private let notificationDelegate = NotificationDelegate()
 
     init() {
         UNUserNotificationCenter.current().delegate = notificationDelegate
+        Theme.applyNavigationBarAppearance()
         let auth = AuthStore()
         let tracks = TrackStore()
         let myBalloon = MyBalloonStore()
@@ -34,6 +36,9 @@ struct OshikazeApp: App {
                 .environment(tracks)
                 .environment(myBalloon)
                 .environment(pops)
+                .environment(artworkColors)
+                .font(Theme.font(16))
+                .tint(Theme.sky)
                 .task { await auth.refresh() }
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
